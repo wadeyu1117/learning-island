@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>知識小島 🏝️ 康軒小五沉浸式教學與闖關大冒險</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet" />
+<script src="./data/curriculum.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<style>
+  :root { --mint:#7ed6b9; --cream:#fff6dc; --coral:#ff8a65; --sky:#8fd3fe; --brown:#7a5a3a; }
+  html,body { margin:0; height:100%; overflow:hidden; font-family:'Zen Maru Gothic',sans-serif; background:#8fd3fe; }
+  canvas { display:block; }
+  .card { background:var(--cream); border:4px solid #e8d7a8; border-radius:28px; box-shadow:0 8px 0 #d9c48c, 0 12px 30px rgba(0,0,0,.18); }
+  .pill { background:rgba(255,246,220,.94); border:3px solid #e8d7a8; border-radius:999px; }
+  .btn { transition:transform .1s, box-shadow .1s, border-color .15s, background-color .15s; box-shadow:0 5px 0 rgba(0,0,0,.16); }
+  .btn:active { transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,.16); }
+  .active-border { border-color:#ff8a65 !important; background:#ffe3d6 !important; box-shadow:0 0 0 3px rgba(255,138,101,.35), 0 5px 0 rgba(0,0,0,.16) !important; }
+  .opt.correct { border-color:#3fb98a !important; background:#d4f5e6 !important; }
+  .opt.wrong { border-color:#e57373 !important; background:#fde0e0 !important; animation:shake .35s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  @keyframes pop { 0%{transform:scale(.85);opacity:0} 80%{transform:scale(1.02)} 100%{transform:scale(1);opacity:1} }
+  .pop { animation:pop .25s ease-out; }
+  .badge.locked { filter:grayscale(1); opacity:.35; }
+  #prompt { transition:opacity .2s; }
+  .hidden-soft { opacity:0; pointer-events:none; }
+  .lesson-body b { color:#c94a29; background:#fff0c2; padding:0 4px; border-radius:6px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- ===== 左上：星星 + 徽章 + 學習進度 ===== -->
+<div class="fixed top-4 left-4 flex flex-col gap-2.5 select-none z-10">
+  <div class="flex items-center gap-2">
+    <div class="pill px-5 py-2 text-2xl font-black text-amber-700 flex items-center gap-2">⭐ <span id="stars">0</span></div>
+    <div class="pill px-4 py-2 text-sm font-black text-[#7a5a3a]">📖 教學 <span id="lessonStat">0/44</span>｜✍️ 單元 <span id="unitStat">0/44</span></div>
+  </div>
+  <div class="card px-4 py-3">
+    <div class="text-sm font-bold text-[#7a5a3a] mb-1.5">四大領域學霸徽章 <span id="badgeCount">0</span>/4 <span class="text-xs text-[#a08560]">（任一科通過3單元即獲徽章）</span></div>
+    <div class="flex gap-2.5 text-3xl">
+      <span class="badge locked" data-badge="chinese" title="國語營地">📖</span>
+      <span class="badge locked" data-badge="math" title="數學工坊">📐</span>
+      <span class="badge locked" data-badge="science" title="自然研究站">🔬</span>
+      <span class="badge locked" data-badge="social" title="社會歷史館">🏯</span>
+    </div>
+    <div class="w-52 h-3 bg-[#eadfbf] rounded-full mt-2 overflow-hidden"><div id="badgeBar" class="h-full bg-[#7ed6b9] transition-all duration-500" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- ===== 左下：地標快速導航 ===== -->
+<div class="fixed bottom-4 left-4 flex flex-wrap gap-2 select-none z-10">
+  <button data-tp="chinese" class="tp-btn btn pill px-3.5 py-1.5 text-sm font-black text-[#7a5a3a]">📖 國語營地</button>
+  <button data-tp="math" class="tp-btn btn pill px-3.5 py-1.5 text-sm font-black text-[#7a5a3a]">📐 數學工坊</button>
+  <button data-tp="science" class="tp-btn btn pill px-3.5 py-1.5 text-sm font-black text-[#7a5a3a]">🔬 自然研究站</button>
+  <button data-tp="social" class="tp-btn btn pill px-3.5 py-1.5 text-sm font-black text-[#7a5a3a]">🏯 社會歷史館</button>
+</div>
+
+<!-- ===== 右上：操作提示 + 筆記本 + 背包 ===== -->
+<div class="fixed top-4 right-4 flex flex-col items-end gap-2.5 select-none z-10">
+  <div class="card px-4 py-2.5 text-[#7a5a3a] text-sm leading-6">
+    <div><kbd class="font-black">W A S D</kbd> / 方向鍵　移動　｜　<kbd class="font-black">空白鍵</kbd>　跳躍</div>
+    <div><kbd class="font-black">E</kbd>　NPC 教學與闖關　｜　<kbd class="font-black">N</kbd>　知識筆記本　｜　<kbd class="font-black">B</kbd>　背包商店</div>
+  </div>
+  <div class="flex gap-2">
+    <button id="noteBtn" class="btn pill px-4 py-2 text-lg font-black text-[#7a5a3a]">📘 知識筆記本</button>
+    <button id="bagBtn" class="btn pill px-4 py-2 text-lg font-black text-[#7a5a3a]">🎒 背包商店</button>
+  </div>
+  <button id="muteBtn" class="btn pill px-3.5 py-1 text-sm font-bold text-[#7a5a3a]">🎵 音樂：開</button>
+</div>
+
+<!-- ===== 互動提示 ===== -->
+<div id="prompt" class="hidden-soft fixed bottom-20 left-1/2 -translate-x-1/2 pill px-6 py-3 text-xl font-black text-[#7a5a3a] z-10">
+  按 <span class="bg-[#ff8a65] text-white rounded-lg px-2">E</span> 找 <span id="promptName"></span> 上課與闖關
+</div>
+<button id="mobileE" class="btn hidden fixed bottom-16 right-6 w-20 h-20 rounded-full bg-[#ff8a65] text-white text-3xl font-black z-10">E</button>
+
+<!-- ===== 主學習視窗（單元大廳 / 互動教學課堂 / 題庫闖關） ===== -->
+<div id="quizModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-3 md:p-6 z-20">
+  <div class="card pop w-full max-w-4xl p-5 md:p-7 max-h-[94vh] flex flex-col">
+    <!-- 頂部 NPC 列 -->
+    <div class="flex items-center gap-3 pb-3 border-b-2 border-[#eadfbf]">
+      <div id="npcFace" class="text-5xl">🦉</div>
+      <div>
+        <div id="npcName" class="text-xl md:text-2xl font-black text-[#7a5a3a]"></div>
+        <div id="npcPlace" class="text-sm text-[#a08560] font-bold"></div>
+      </div>
+      <div id="qProgress" class="ml-auto pill px-4 py-1 text-sm md:text-base font-black text-[#7a5a3a]"></div>
+    </div>
+
+    <!-- 內容區（可捲動） -->
+    <div class="overflow-y-auto flex-1 pr-1 mt-3 space-y-3">
+      <div id="dialog" class="bg-white/80 rounded-2xl p-4 text-lg md:text-xl leading-8 text-[#5a4630]"></div>
+      <div id="subContent"></div>
+      <div id="options" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-1"></div>
+      <div id="feedback" class="text-base md:text-lg font-bold leading-7"></div>
+    </div>
+
+    <!-- 底部按鈕列 -->
+    <div class="flex flex-wrap justify-between items-center gap-2 pt-3 mt-3 border-t-2 border-[#eadfbf]">
+      <div class="flex gap-2">
+        <button id="backHubBtn" class="btn hidden px-4 py-2 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-bold text-base">← 回單元列表</button>
+        <button id="prevStepBtn" class="btn hidden px-4 py-2 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-bold text-base">◀ 上一頁</button>
+      </div>
+      <div class="flex gap-2 ml-auto">
+        <button id="closeQuiz" class="btn px-5 py-2 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-bold text-base">離開</button>
+        <button id="nextBtn" class="btn px-6 py-2 rounded-2xl bg-[#7ed6b9] text-white font-black text-base md:text-lg">下一步 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 隨身知識筆記本視窗（全44單元132張教學卡＋錯題本） ===== -->
+<div id="noteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-3 md:p-6 z-20">
+  <div class="card pop w-full max-w-4xl p-5 md:p-7 max-h-[92vh] flex flex-col">
+    <div class="flex items-center justify-between pb-3 border-b-2 border-[#eadfbf]">
+      <div class="text-2xl font-black text-[#7a5a3a]">📘 康軒小五隨身知識筆記本 & 錯題本</div>
+      <button id="closeNote" class="btn px-4 py-1.5 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-bold">關閉 ✕</button>
+    </div>
+    <!-- 科目與錯題本 Tabs -->
+    <div id="noteTabs" class="flex flex-wrap gap-2 my-3">
+      <button data-ntab="chinese" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#7a5a3a]">📖 國語 (12課)</button>
+      <button data-ntab="math" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#7a5a3a]">📐 數學 (10單元)</button>
+      <button data-ntab="science" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#7a5a3a]">🔬 自然 (12活動)</button>
+      <button data-ntab="social" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#7a5a3a]">🏯 社會 (10課)</button>
+      <button data-ntab="wrong" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#c94a29]">🩺 我的錯題本 (<span id="wrongCountTab">0</span>)</button>
+    </div>
+    <div id="noteBody" class="overflow-y-auto flex-1 space-y-3 pr-1"></div>
+  </div>
+</div>
+
+<!-- ===== 背包商店 ===== -->
+<div id="bagModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-20">
+  <div class="card pop w-full max-w-xl p-6">
+    <div class="flex items-center mb-3">
+      <div class="text-2xl font-black text-[#7a5a3a]">🎒 背包 & 星星商店</div>
+      <div class="ml-auto pill px-4 py-1 font-black text-amber-700">⭐ <span id="stars2">0</span></div>
+    </div>
+    <div class="text-[#a08560] mb-3 font-bold">讀完教學卡或闖關答對都能獲得星星！點選已擁有的帽子即可穿戴。</div>
+    <div id="shop" class="grid grid-cols-2 gap-3"></div>
+    <div class="flex justify-end mt-4"><button id="closeBag" class="btn px-5 py-2 rounded-2xl bg-[#7ed6b9] text-white font-black text-lg">關閉</button></div>
+  </div>
+</div>
+
+<!-- ===== 歡迎畫面 ===== -->
+<div id="welcome" class="fixed inset-0 bg-[#8fd3fe]/85 flex items-center justify-center z-30 p-4">
+  <div class="card pop p-7 max-w-xl text-center">
+    <div class="text-6xl mb-2">🏝️</div>
+    <div class="text-3xl font-black text-[#7a5a3a] mb-2">歡迎來到康軒小五知識小島！</div>
+    <div class="text-base md:text-lg text-[#6e563a] leading-8 mb-4 text-left bg-white/70 rounded-2xl p-4">
+      🌟 <b>全新升級「先教學、後闖關」學習系統</b>：<br/>
+      • 收錄康軒五上 <b>44 個完整單元、132 張重點教學講義卡、373 道精選題庫</b>！<br/>
+      • 每個單元都能先點 <b>「📖 課堂教學」</b> 看老師圖解重點與口訣，再點 <b>「✍️ 單元測驗」</b> 實戰闖關！<br/>
+      • 答錯有 <b>引導提示</b>、答對有 <b>完整詳解</b>，還會自動收錄至 <b>「🩺 錯題本」</b> 隨時複習！
+    </div>
+    <button id="startBtn" class="btn px-8 py-3 rounded-2xl bg-[#ff8a65] text-white text-2xl font-black">出發登島冒險 →</button>
+  </div>
+</div>
+
+<canvas id="confetti" class="fixed inset-0 pointer-events-none z-40"></canvas>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* =========================================================
+ * 1. 科目與康軒題庫載入（44 單元、132 張教學卡、373 題）
+ * ========================================================= */
+const SUBJECTS = {
+  chinese: {
+    npc:'貓頭鷹館長 歐文', face:'🦉', place:'國語營地・文學森林', color:0xff8a65,
+    intro:'咕咕～歡迎來到文學森林！這裡有五上第 1 到第 12 課的課文重點、形近字、成語與修辭教學，先聽我講課再闖關吧！',
+    units: (window.KANGXUAN_CURRICULUM?.chinese?.units) || []
+  },
+  math: {
+    npc:'柴犬學者 小八', face:'🐕', place:'數學工坊・幾何積木島', color:0x6fb7ff,
+    intro:'汪！歡迎來到數學工坊！從多位小數、因數倍數、分數通分到多邊形面積與立體圖形，我們一步一步推導公式！',
+    units: (window.KANGXUAN_CURRICULUM?.math?.units) || []
+  },
+  science: {
+    npc:'兔子博士 莉莉', face:'🐰', place:'自然研究站・生態探索實驗室', color:0x7ed6b9,
+    intro:'哈囉！在生態與科學實驗室裡，我們一起探索動物行為、聲光彩虹、太陽系星空與氧氣生鏽實驗！',
+    units: (window.KANGXUAN_CURRICULUM?.science?.units) || []
+  },
+  social: {
+    npc:'浣熊船長 阿福', face:'🦝', place:'社會歷史館・時光聚落', color:0xd9785a,
+    intro:'嘿呦！跟著船長一起認識臺灣的地理氣候、史前文化、原住民族，以及大航海時代的荷西與鄭氏歷史吧！',
+    units: (window.KANGXUAN_CURRICULUM?.social?.units) || []
+  }
+};
+
+/* =========================================================
+ * 2. 遊戲狀態（localStorage 保存）
+ * ========================================================= */
+const SAVE_KEY = 'learning-island-v2';
+const state = Object.assign({
+  stars: 0,
+  badges: {},
+  owned: {},
+  equipped: null,
+  lessonsRead: {},   // { [unitId]: true }
+  unitStars: {},     // { [unitId]: 1|2|3 }
+  wrongBook: []      // [{ subj, unitId, unitTitle, q, o, a, hint, explain }]
+}, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'));
+const save = () => localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+
+const SHOP = [
+  { id:'leaf',   name:'嫩葉學童頭飾', icon:'🌱', cost:4,  type:'hat' },
+  { id:'straw',  name:'草編冒險帽',   icon:'👒', cost:8,  type:'hat' },
+  { id:'crown',  name:'金榜學霸皇冠', icon:'👑', cost:20, type:'hat' },
+  { id:'seeds',  name:'彩虹花圃種子', icon:'🌷', cost:12, type:'deco' },
+];
+
+/* =========================================================
+ * 3. 音效與背景音樂（WebAudio 合成，免版權）
+ * ========================================================= */
+let actx, musicGain, musicOn = true, musicTimer;
+function initAudio() {
+  if (actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  musicGain = actx.createGain(); musicGain.gain.value = 0.05; musicGain.connect(actx.destination);
+  startMusic();
+}
+function tone(freq, start, dur, type='sine', gainNode=null, vol=0.22) {
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0, start); g.gain.linearRampToValueAtTime(vol, start + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+  o.connect(g); g.connect(gainNode || actx.destination); o.start(start); o.stop(start + dur + 0.05);
+}
+function startMusic() {
+  const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+  const chords = [[261.63,329.63,392],[220,261.63,329.63],[174.61,220,261.63],[196,246.94,293.66]];
+  let bar = 0;
+  const playBar = () => {
+    if (!musicOn) return;
+    const t = actx.currentTime + 0.05;
+    chords[bar % 4].forEach(f => tone(f, t, 1.9, 'triangle', musicGain, 0.5));
+    for (let i = 0; i < 4; i++) if (Math.random() > 0.25)
+      tone(scale[Math.floor(Math.random()*scale.length)], t + i*0.5, 0.45, 'sine', musicGain, 0.7);
+    bar++;
+  };
+  playBar(); musicTimer = setInterval(playBar, 2000);
+}
+const sfx = {
+  coin:  () => { const t = actx.currentTime; tone(987.77, t, .12, 'square', null, .12); tone(1318.5, t+.1, .3, 'square', null, .12); },
+  wrong: () => { const t = actx.currentTime; tone(330, t, .2, 'triangle'); tone(262, t+.15, .3, 'triangle'); },
+  badge: () => { const t = actx.currentTime; [523,659,784,1047].forEach((f,i)=>tone(f, t+i*.12, .4, 'triangle', null, .2)); },
+  talk:  () => { const t = actx.currentTime; tone(600 + Math.random()*300, t, .06, 'sine', null, .06); },
+  jump:  () => { const t = actx.currentTime; const o = actx.createOscillator(), g = actx.createGain();
+           o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(700,t+.15);
+           g.gain.setValueAtTime(.12,t); g.gain.exponentialRampToValueAtTime(.001,t+.2);
+           o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+.25); }
+};
+const play = n => { if (actx) sfx[n](); };
+
+/* =========================================================
+ * 4. Three.js 3D 島嶼場景
+ * ========================================================= */
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.getElementById('app').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8fd3fe);
+scene.fog = new THREE.Fog(0x8fd3fe, 60, 140);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 300);
+
+scene.add(new THREE.HemisphereLight(0xfff6dc, 0x7ed6b9, 0.9));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(30, 50, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-50, right:50, top:50, bottom:-50, near:1, far:150 });
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+const toon = (c, opts={}) => new THREE.MeshToonMaterial({ color:c, ...opts });
+const flat = (c) => new THREE.MeshStandardMaterial({ color:c, flatShading:true, roughness:.9 });
+function mesh(geo, mat, x=0, y=0, z=0, parent=scene) {
+  const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z);
+  m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+}
+
+const ISLAND_R = 42;
+const island = new THREE.Group(); scene.add(island);
+mesh(new THREE.CylinderGeometry(ISLAND_R, ISLAND_R-2, 2, 40, 1), flat(0x8fd16f), 0, -1, 0, island);
+const rockGeo = new THREE.ConeGeometry(ISLAND_R-2, 22, 14, 3);
+rockGeo.attributes.position.array.forEach((v,i,arr)=>{ if (i%3!==1) arr[i] += (Math.random()-.5)*2.2; });
+rockGeo.computeVertexNormals();
+const rock = mesh(rockGeo, flat(0xa47551), 0, -13, 0, island); rock.rotation.x = Math.PI;
+const beach = mesh(new THREE.RingGeometry(ISLAND_R-3.5, ISLAND_R, 40), flat(0xf5e1a4), 0, 0.02, 0, island);
+beach.rotation.x = -Math.PI/2;
+const sea = mesh(new THREE.CircleGeometry(220, 48), new THREE.MeshStandardMaterial({ color:0x5ec4e8, transparent:true, opacity:.85 }), 0, -18, 0);
+sea.rotation.x = -Math.PI/2; sea.castShadow = false;
+
+const pathMat = flat(0xd9b27c);
+function pathTo(x, z) {
+  const len = Math.hypot(x, z) - 6;
+  const p = mesh(new THREE.BoxGeometry(3, 0.05, len), pathMat, x/2*(len/(len+6))+x*0.06, 0.03, z/2*(len/(len+6))+z*0.06);
+  p.rotation.y = Math.atan2(x, z); p.castShadow = false;
+}
+mesh(new THREE.CylinderGeometry(6, 6, 0.06, 20), pathMat, 0, 0.03, 0).castShadow = false;
+
+const colliders = [];
+const trees = [];
+function tree(x, z, s=1) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); scene.add(g);
+  mesh(new THREE.CylinderGeometry(.35,.5,2.2,6), flat(0x8b5a3c), 0, 1.1, 0, g);
+  const leafCol = [0x5cb85c,0x6cc46a,0x4fa86b][Math.floor(Math.random()*3)];
+  mesh(new THREE.IcosahedronGeometry(1.7, 0), flat(leafCol), 0, 3.2, 0, g);
+  mesh(new THREE.IcosahedronGeometry(1.2, 0), flat(leafCol), .6, 4.3, .2, g);
+  colliders.push({ x, z, r: .9*s });
+  g.userData.sway = Math.random()*Math.PI*2; trees.push(g);
+}
+function flower(x, z, col) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+  mesh(new THREE.CylinderGeometry(.04,.04,.5,4), flat(0x4caf50), 0, .25, 0, g);
+  mesh(new THREE.IcosahedronGeometry(.18,0), flat(col), 0, .55, 0, g);
+  return g;
+}
+const FLOWER_COLS = [0xff8a65, 0xffd54f, 0xf48fb1, 0xffffff, 0xba68c8];
+
+const npcs = [];
+function makeAnimal(bodyCol, earType='round') {
+  const g = new THREE.Group();
+  mesh(new THREE.CapsuleGeometry(.55, .6, 4, 8), toon(bodyCol), 0, .95, 0, g);
+  const head = mesh(new THREE.SphereGeometry(.62, 12, 10), toon(bodyCol), 0, 2.0, 0, g);
+  mesh(new THREE.SphereGeometry(.09, 8, 6), toon(0x222222), -.22, 2.08, .55, g);
+  mesh(new THREE.SphereGeometry(.09, 8, 6), toon(0x222222),  .22, 2.08, .55, g);
+  mesh(new THREE.SphereGeometry(.12, 8, 6), toon(0xff9e9e), -.36, 1.9, .48, g);
+  mesh(new THREE.SphereGeometry(.12, 8, 6), toon(0xff9e9e),  .36, 1.9, .48, g);
+  const earGeo = earType==='long' ? new THREE.CapsuleGeometry(.12,.7,4,6)
+               : earType==='tri'  ? new THREE.ConeGeometry(.22,.45,4)
+               : new THREE.SphereGeometry(.2,8,6);
+  const ey = earType==='long' ? 2.85 : 2.55;
+  mesh(earGeo, toon(bodyCol), -.35, ey, 0, g).rotation.z = .2;
+  mesh(earGeo, toon(bodyCol),  .35, ey, 0, g).rotation.z = -.2;
+  g.userData.head = head;
+  return g;
+}
+
+const LANDMARKS = [
+  { key:'chinese', x:-22, z:-18 },
+  { key:'math',    x: 22, z:-18 },
+  { key:'science', x: 22, z: 18 },
+  { key:'social',  x:-22, z: 18 },
+];
+
+function buildChinese(g) {
+  mesh(new THREE.CylinderGeometry(1.2,1.6,7,7), flat(0x8b5a3c), 0, 3.5, -2, g);
+  mesh(new THREE.IcosahedronGeometry(4, 0), flat(0x5cb85c), 0, 8.5, -2, g);
+  mesh(new THREE.BoxGeometry(4,2.6,3.4), flat(0xc98b5a), 0, 6.2, -2, g);
+  mesh(new THREE.ConeGeometry(3.2, 2, 4), flat(0xff8a65), 0, 8.4, -2, g).rotation.y = Math.PI/4;
+  const bookL = mesh(new THREE.BoxGeometry(3.4,.4,4.4), flat(0xff8a65), -1.8, .9, 2.5, g); bookL.rotation.z = .25;
+  const bookR = mesh(new THREE.BoxGeometry(3.4,.4,4.4), flat(0xff8a65),  1.8, .9, 2.5, g); bookR.rotation.z = -.25;
+  const pL = mesh(new THREE.BoxGeometry(3.1,.2,4.0), flat(0xfffaf0), -1.75, 1.15, 2.5, g); pL.rotation.z = .25;
+  const pR = mesh(new THREE.BoxGeometry(3.1,.2,4.0), flat(0xfffaf0),  1.75, 1.15, 2.5, g); pR.rotation.z = -.25;
+  return 5;
+}
+function buildMath(g) {
+  mesh(new THREE.BoxGeometry(5,3,5), flat(0x6fb7ff), 0, 1.5, -1, g);
+  mesh(new THREE.CylinderGeometry(1.4,1.4,3,12), flat(0xffd54f), -2.2, 4.5, -1, g);
+  mesh(new THREE.BoxGeometry(2.4,2.4,2.4), flat(0xff8a65), 1.6, 4.2, -.2, g);
+  mesh(new THREE.ConeGeometry(1.6, 2.4, 4), flat(0x7ed6b9), 1.6, 6.6, -.2, g).rotation.y = Math.PI/4;
+  const gear = new THREE.Group(); gear.position.set(0, 5, 1.6); g.add(gear);
+  mesh(new THREE.CylinderGeometry(1.3,1.3,.4,16), flat(0xb0bec5), 0,0,0, gear).rotation.x = Math.PI/2;
+  for (let i=0;i<10;i++){ const t = mesh(new THREE.BoxGeometry(.4,.5,.4), flat(0xb0bec5), Math.cos(i/10*Math.PI*2)*1.5, Math.sin(i/10*Math.PI*2)*1.5, 0, gear); t.rotation.z = i/10*Math.PI*2; }
+  g.userData.spin = gear;
+  return 4.8;
+}
+function buildScience(g) {
+  mesh(new THREE.CylinderGeometry(4.2,4.4,1,16), flat(0xeeeeee), 0, .5, -1, g);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(4, 16, 10, 0, Math.PI*2, 0, Math.PI/2),
+    new THREE.MeshPhysicalMaterial({ color:0xbff3ff, transparent:true, opacity:.35, roughness:.05, flatShading:true }));
+  dome.position.set(0,1,-1); g.add(dome);
+  for (let i=0;i<5;i++) mesh(new THREE.IcosahedronGeometry(.8,0), flat(0x4caf50), Math.cos(i*1.3)*2, 1.8, -1+Math.sin(i*1.3)*2, g);
+  const tel = new THREE.Group(); tel.position.set(3.4, 1, 2.4); g.add(tel);
+  mesh(new THREE.CylinderGeometry(.08,.08,1.6,5), flat(0x555555), 0, .8, 0, tel);
+  const tube = mesh(new THREE.CylinderGeometry(.25,.35,2,10), flat(0x3f51b5), 0, 1.9, 0, tel); tube.rotation.x = -.8;
+  return 5;
+}
+function buildSocial(g) {
+  mesh(new THREE.BoxGeometry(6,2.6,3.6), flat(0xc0573e), 0, 1.3, -1.5, g);
+  const roof = mesh(new THREE.CylinderGeometry(.1, 4.2, 1.8, 4, 1), flat(0x6d4c41), 0, 3.5, -1.5, g);
+  roof.rotation.y = Math.PI/4; roof.scale.set(1.1,1,.7);
+  mesh(new THREE.BoxGeometry(1.2,1.8,.2), flat(0x5d4037), 0, .9, .35, g);
+  mesh(new THREE.ConeGeometry(.25,1.2,4), flat(0x6d4c41), -3, 4.3, -1.5, g).rotation.z = .8;
+  mesh(new THREE.ConeGeometry(.25,1.2,4), flat(0x6d4c41),  3, 4.3, -1.5, g).rotation.z = -.8;
+  mesh(new THREE.CylinderGeometry(.12,.12,2,6), flat(0x8b5a3c), 3.6, 1, 2.4, g);
+  const map = mesh(new THREE.BoxGeometry(1.8,1.2,.08), flat(0xf3e0b5), 3.6, 2.2, 2.4, g); map.rotation.y = -.5;
+  const boat = new THREE.Group(); boat.position.set(-3.6, 0, 2.6); g.add(boat);
+  mesh(new THREE.BoxGeometry(1.8,.5,.8), flat(0x8b5a3c), 0, .25, 0, boat);
+  mesh(new THREE.CylinderGeometry(.05,.05,1.8,4), flat(0x5d4037), 0, 1.3, 0, boat);
+  mesh(new THREE.ConeGeometry(.6,1.3,3), flat(0xffffff), .3, 1.4, 0, boat).rotation.z = -Math.PI/2;
+  return 5;
+}
+const BUILDERS = { chinese:buildChinese, math:buildMath, science:buildScience, social:buildSocial };
+const NPC_LOOK = { chinese:[0xa1887f,'tri'], math:[0xf0b46a,'tri'], science:[0xffffff,'long'], social:[0x9e9e9e,'round'] };
+
+function makeSignTexture(text) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 104;
+  const x = c.getContext('2d');
+  x.fillStyle = '#e6b77e'; x.fillRect(0,0,256,104);
+  x.fillStyle = '#5a3d22'; x.font = '900 44px "Zen Maru Gothic", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(text, 128, 54);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+
+LANDMARKS.forEach(L => {
+  const g = new THREE.Group(); g.position.set(L.x, 0, L.z);
+  g.rotation.y = Math.atan2(-L.x, -L.z);
+  scene.add(g);
+  const r = BUILDERS[L.key](g);
+  colliders.push({ x:L.x, z:L.z, r });
+  L.group = g;
+  pathTo(L.x, L.z);
+  const dir = new THREE.Vector3(-L.x, 0, -L.z).normalize();
+  const [col, ear] = NPC_LOOK[L.key];
+  const npc = makeAnimal(col, ear);
+  npc.position.set(L.x + dir.x*7.5, 0, L.z + dir.z*7.5);
+  npc.rotation.y = Math.atan2(dir.x, dir.z);
+  scene.add(npc);
+  colliders.push({ x:npc.position.x, z:npc.position.z, r:.8 });
+  const marker = mesh(new THREE.OctahedronGeometry(.35,0), toon(SUBJECTS[L.key].color, { emissive:SUBJECTS[L.key].color, emissiveIntensity:.4 }), 0, 3.4, 0, npc);
+  npcs.push({ key:L.key, obj:npc, marker });
+  const sign = new THREE.Group(); sign.position.set(L.x + dir.x*10 + dir.z*2.5, 0, L.z + dir.z*10 - dir.x*2.5); sign.rotation.y = npc.rotation.y; scene.add(sign);
+  mesh(new THREE.BoxGeometry(.15,1.4,.15), flat(0x8b5a3c), 0,.7,0, sign);
+  const tex = makeSignTexture(SUBJECTS[L.key].place.split('・')[0]);
+  const board = new THREE.Mesh(new THREE.BoxGeometry(2.2,.9,.12), [flat(0xc98b5a),flat(0xc98b5a),flat(0xc98b5a),flat(0xc98b5a), new THREE.MeshStandardMaterial({ map:tex }), flat(0xc98b5a)]);
+  board.position.y = 1.5; board.castShadow = true; sign.add(board);
+});
+
+(() => {
+  const g = new THREE.Group(); g.position.set(0, 0, -30); scene.add(g);
+  mesh(new THREE.BoxGeometry(5,3,4), flat(0xd9a066), 0,1.5,0, g);
+  mesh(new THREE.ConeGeometry(4,2.2,4), flat(0x7ed6b9), 0,4.1,0, g).rotation.y = Math.PI/4;
+  mesh(new THREE.BoxGeometry(1,1.8,.1), flat(0x7a5a3a), 0,.9,2.02, g);
+  colliders.push({ x:0, z:-30, r:3.2 });
+})();
+
+function farFromAll(x, z, minD) {
+  if (Math.hypot(x,z) < 9) return false;
+  for (const c of colliders) if (Math.hypot(x-c.x, z-c.z) < c.r + minD) return false;
+  for (const L of LANDMARKS) {
+    const t = Math.max(0, Math.min(1, (x*L.x + z*L.z)/(L.x*L.x + L.z*L.z)));
+    if (Math.hypot(x - L.x*t, z - L.z*t) < 3) return false;
+  }
+  return true;
+}
+for (let i=0, n=0; i<400 && n<38; i++) {
+  const a = Math.random()*Math.PI*2, d = 10 + Math.random()*(ISLAND_R-15);
+  const x = Math.cos(a)*d, z = Math.sin(a)*d;
+  if (farFromAll(x, z, 2)) { tree(x, z, .8 + Math.random()*.6); n++; }
+}
+for (let i=0;i<120;i++) {
+  const a = Math.random()*Math.PI*2, d = 7 + Math.random()*(ISLAND_R-11);
+  flower(Math.cos(a)*d, Math.sin(a)*d, FLOWER_COLS[i%FLOWER_COLS.length]);
+}
+const bonusFlowers = new THREE.Group(); scene.add(bonusFlowers);
+function buildBonusFlowers() {
+  if (bonusFlowers.children.length) return;
+  for (let i=0;i<60;i++) {
+    const a = i/60*Math.PI*2, d = 5 + (i%3)*.5;
+    const f = flower(Math.cos(a)*d, Math.sin(a)*d, FLOWER_COLS[i%FLOWER_COLS.length]);
+    scene.remove(f); bonusFlowers.add(f); f.scale.setScalar(1.6);
+  }
+}
+
+const clouds = [];
+for (let i=0;i<10;i++) {
+  const g = new THREE.Group();
+  for (let j=0;j<4;j++) mesh(new THREE.IcosahedronGeometry(2+Math.random()*1.5,0), new THREE.MeshStandardMaterial({ color:0xffffff, flatShading:true }), j*2.2, Math.random(), Math.random(), g).castShadow = false;
+  g.position.set((Math.random()-.5)*160, 18+Math.random()*10, (Math.random()-.5)*160);
+  scene.add(g); clouds.push(g);
+}
+
+/* =========================================================
+ * 5. 玩家角色 + 第三人稱控制器 + 地標傳送
+ * ========================================================= */
+const player = makeAnimal(0xffcc80, 'round');
+mesh(new THREE.BoxGeometry(.7,.7,.35), toon(0xff8a65), 0, 1.1, -.6, player);
+scene.add(player);
+player.position.set(0, 0, 4);
+const hatSlot = new THREE.Group(); hatSlot.position.y = 2.55; player.add(hatSlot);
+
+function applyHat() {
+  hatSlot.clear();
+  const id = state.equipped;
+  if (id === 'straw') {
+    mesh(new THREE.CylinderGeometry(.95,.95,.06,16), flat(0xf3d27a), 0,0,0, hatSlot);
+    mesh(new THREE.CylinderGeometry(.45,.5,.4,12), flat(0xf3d27a), 0,.2,0, hatSlot);
+    mesh(new THREE.CylinderGeometry(.51,.51,.1,12), flat(0xff8a65), 0,.08,0, hatSlot);
+  } else if (id === 'crown') {
+    mesh(new THREE.CylinderGeometry(.42,.42,.3,8,1,true), flat(0xffd54f), 0,.1,0, hatSlot);
+    for (let i=0;i<5;i++) mesh(new THREE.ConeGeometry(.1,.3,4), flat(0xffd54f), Math.cos(i/5*Math.PI*2)*.4, .38, Math.sin(i/5*Math.PI*2)*.4, hatSlot);
+  } else if (id === 'leaf') {
+    mesh(new THREE.CylinderGeometry(.03,.03,.3,4), flat(0x4caf50), 0,.12,0, hatSlot);
+    const l1 = mesh(new THREE.SphereGeometry(.18,6,4), flat(0x7ed957), -.14,.3,0, hatSlot); l1.scale.set(1.4,.4,.8);
+    const l2 = mesh(new THREE.SphereGeometry(.18,6,4), flat(0x7ed957),  .14,.3,0, hatSlot); l2.scale.set(1.4,.4,.8);
+  }
+}
+
+function teleportTo(key) {
+  initAudio();
+  const n = npcs.find(x => x.key === key);
+  if (!n) return;
+  const dir = new THREE.Vector3(n.obj.position.x, 0, n.obj.position.z).normalize();
+  player.position.set(n.obj.position.x - dir.x*2.6, 0, n.obj.position.z - dir.z*2.6);
+  player.rotation.y = Math.atan2(dir.x, dir.z);
+  document.querySelectorAll('.tp-btn').forEach(b => b.classList.toggle('active-border', b.dataset.tp === key));
+  nearestNpc = n;
+  openSubjectHub(key);
+}
+document.querySelectorAll('.tp-btn').forEach(b => b.onclick = () => teleportTo(b.dataset.tp));
+
+const keys = {};
+let uiOpen = false;
+addEventListener('keydown', e => {
+  if (uiOpen) { if (e.key === 'Escape') closeAll(); return; }
+  keys[e.code] = true;
+  if (e.code === 'Space') { e.preventDefault(); jump(); }
+  if (e.code === 'KeyE') tryInteract();
+  if (e.code === 'KeyB') openBag();
+  if (e.code === 'KeyN') openNotebook('chinese');
+});
+addEventListener('keyup', e => keys[e.code] = false);
+
+const vel = new THREE.Vector3();
+let vy = 0, grounded = true, camYaw = Math.PI, walkT = 0;
+function jump() { if (grounded) { vy = 9; grounded = false; play('jump'); } }
+
+let dragging = false, lastX = 0;
+renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; });
+addEventListener('pointerup', () => dragging = false);
+addEventListener('pointermove', e => { if (dragging) { camYaw -= (e.clientX - lastX) * 0.005; lastX = e.clientX; } });
+
+const camPos = new THREE.Vector3(0, 10, 18), camLook = new THREE.Vector3();
+let nearestNpc = null;
+
+function updatePlayer(dt) {
+  const f = (keys.KeyW||keys.ArrowUp?1:0) - (keys.KeyS||keys.ArrowDown?1:0);
+  const s = (keys.KeyD||keys.ArrowRight?1:0) - (keys.KeyA||keys.ArrowLeft?1:0);
+  const fwd = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+  const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+  const wish = fwd.multiplyScalar(f).add(right.multiplyScalar(s));
+  const speed = 9;
+  if (wish.lengthSq() > 0) {
+    wish.normalize();
+    vel.lerp(wish.multiplyScalar(speed), 1 - Math.exp(-12*dt));
+    const targetRot = Math.atan2(vel.x, vel.z);
+    let d = targetRot - player.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+    player.rotation.y += d * Math.min(1, dt*12);
+    walkT += dt * 12;
+  } else {
+    vel.lerp(new THREE.Vector3(), 1 - Math.exp(-10*dt));
+    walkT = 0;
+  }
+  const p = player.position;
+  p.x += vel.x*dt; p.z += vel.z*dt;
+  for (const c of colliders) {
+    const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), min = c.r + .6;
+    if (d < min && d > 0.0001) { p.x = c.x + dx/d*min; p.z = c.z + dz/d*min; }
+  }
+  const dist = Math.hypot(p.x, p.z), lim = ISLAND_R - 1.5;
+  if (dist > lim) { p.x *= lim/dist; p.z *= lim/dist; }
+  vy -= 25*dt; p.y += vy*dt;
+  if (p.y <= 0) { p.y = 0; vy = 0; grounded = true; }
+  player.children[0].position.y = .95 + Math.abs(Math.sin(walkT))*.12;
+  player.userData.head.position.y = 2.0 + Math.abs(Math.sin(walkT))*.12;
+  hatSlot.position.y = 2.55 + Math.abs(Math.sin(walkT))*.12;
+
+  const camDist = 14, camH = 8;
+  const target = new THREE.Vector3(p.x + Math.sin(camYaw)*camDist, p.y + camH, p.z + Math.cos(camYaw)*camDist);
+  camPos.lerp(target, 1 - Math.exp(-5*dt));
+  camLook.lerp(new THREE.Vector3(p.x, p.y + 1.5, p.z), 1 - Math.exp(-8*dt));
+  camera.position.copy(camPos); camera.lookAt(camLook);
+  sun.position.set(p.x + 30, 50, p.z + 20); sun.target.position.copy(p); sun.target.updateMatrixWorld();
+
+  nearestNpc = null; let best = 4.5;
+  for (const n of npcs) { const d = n.obj.position.distanceTo(p); if (d < best) { best = d; nearestNpc = n; } }
+  const prompt = document.getElementById('prompt');
+  if (nearestNpc && !uiOpen) {
+    document.getElementById('promptName').textContent = SUBJECTS[nearestNpc.key].npc;
+    prompt.classList.remove('hidden-soft');
+  } else prompt.classList.add('hidden-soft');
+}
+
+/* =========================================================
+ * 6. 教學課堂 ＋ 單元闖關測驗系統（先教學、後測驗）
+ * ========================================================= */
+const $ = id => document.getElementById(id);
+let quiz = null; // 儲存當前打開的科目、單元、模式（hub | lesson | question | answered | done）
+
+function tryInteract() {
+  if (!nearestNpc || uiOpen) return;
+  const n = nearestNpc;
+  n.obj.rotation.y = Math.atan2(player.position.x - n.obj.position.x, player.position.z - n.obj.position.z);
+  openSubjectHub(n.key);
+}
+
+function openSubjectHub(key, selectedUnitId = null) {
+  uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false);
+  const S = SUBJECTS[key];
+  const selId = selectedUnitId || (S.units[0] && S.units[0].id);
+  quiz = { key, mode:'hub', selectedUnitId: selId };
+
+  $('npcFace').textContent = S.face;
+  $('npcName').textContent = S.npc;
+  $('npcPlace').textContent = S.place;
+  const passedUnits = S.units.filter(u => (state.unitStars[u.id] || 0) >= 2).length;
+  $('qProgress').textContent = `已通過 ${passedUnits} / ${S.units.length} 單元`;
+
+  $('dialog').innerHTML = `<div class="font-bold">${S.intro}</div>
+    <div class="text-sm text-[#8c6d46] mt-1">💡 建議學習順序：先點選單元的 <b>「📖 課堂教學」</b> 學習重點與口訣（可得 ⭐×2），再點 <b>「✍️ 單元測驗」</b> 挑戰拿滿 3 顆星！</div>`;
+
+  const wrongInSubj = state.wrongBook.filter(w => w.subj === key);
+  const sub = $('subContent');
+  sub.innerHTML = `
+    <div class="flex flex-wrap gap-2 mb-3">
+      <button id="grandMixBtn" class="btn px-4 py-2 rounded-2xl bg-[#ff8a65] text-white font-black text-base">🏆 全科隨機大滿貫（抽10題）</button>
+      <button id="wrongDrillBtn" class="btn px-4 py-2 rounded-2xl ${wrongInSubj.length ? 'bg-[#e57373] text-white' : 'bg-[#eadfbf] text-[#8c6d46]'} font-black text-base">
+        🩺 本科錯題特訓營（${wrongInSubj.length} 題待消滅）
+      </button>
+    </div>
+    <div id="unitList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+  `;
+
+  const uBox = $('unitList');
+  S.units.forEach(u => {
+    const read = !!state.lessonsRead[u.id];
+    const st = state.unitStars[u.id] || 0;
+    const starStr = '⭐'.repeat(st) + '☆'.repeat(3 - st);
+    const card = document.createElement('div');
+    card.className = `unit-card rounded-2xl border-4 border-[#eadfbf] bg-white p-3.5 flex flex-col justify-between gap-2 cursor-pointer transition-all`;
+    card.dataset.uid = u.id;
+    card.innerHTML = `
+      <div>
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-black text-lg text-[#5a4630]">${u.title}</span>
+          <span class="text-sm font-bold whitespace-nowrap">${starStr}</span>
+        </div>
+        <div class="text-sm text-[#8c6d46] mt-1">${u.summary}</div>
+        <div class="text-xs font-bold mt-1.5 flex gap-2">
+          <span class="px-2 py-0.5 rounded-full ${read ? 'bg-[#d4f5e6] text-[#2b8a63]' : 'bg-[#fff6dc] text-[#a08560]'}">
+            ${read ? '✓ 已完成教學' : `📖 ${u.lessons.length} 張教學卡`}
+          </span>
+          <span class="px-2 py-0.5 rounded-full bg-[#fff6dc] text-[#7a5a3a]">✍️ ${u.questions.length} 道題目</span>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-1">
+        <button data-act="lesson" class="btn flex-1 py-1.5 rounded-xl bg-[#7ed6b9] text-white font-black text-sm">📖 課堂教學</button>
+        <button data-act="quiz" class="btn flex-1 py-1.5 rounded-xl bg-[#ff8a65] text-white font-black text-sm">✍️ 單元測驗</button>
+      </div>
+    `;
+    card.onclick = (e) => {
+      selectUnitCard(u.id);
+      const act = e.target.closest('button')?.dataset?.act;
+      if (act === 'lesson') startLesson(key, u.id);
+      else if (act === 'quiz') startUnitQuiz(key, u.id);
+    };
+    uBox.appendChild(card);
+  });
+
+  selectUnitCard(selId);
+  $('grandMixBtn').onclick = () => startGrandMixQuiz(key);
+  $('wrongDrillBtn').onclick = () => { if (wrongInSubj.length) startWrongDrill(key); };
+
+  $('options').innerHTML = '';
+  $('feedback').innerHTML = '';
+  $('backHubBtn').classList.add('hidden');
+  $('prevStepBtn').classList.add('hidden');
+  $('nextBtn').textContent = '📖 開始所選單元教學 →';
+  $('nextBtn').classList.remove('hidden');
+  $('quizModal').classList.remove('hidden');
+}
+
+function selectUnitCard(uid) {
+  if (quiz) quiz.selectedUnitId = uid;
+  // 統一雙向更新所有單元卡的 active-border 樣式
+  document.querySelectorAll('#unitList .unit-card').forEach(el => {
+    el.classList.toggle('active-border', el.dataset.uid === uid);
+  });
+}
+
+/* ---------- 互動教學課堂（Lesson Mode） ---------- */
+function startLesson(key, unitId, stepIdx = 0) {
+  const S = SUBJECTS[key];
+  const U = S.units.find(u => u.id === unitId) || S.units[0];
+  quiz = { key, mode:'lesson', unit: U, step: stepIdx };
+  renderLessonStep();
+}
+
+function renderLessonStep() {
+  const { key, unit: U, step } = quiz;
+  const L = U.lessons[step];
+  $('qProgress').textContent = `📖 教學講義 ${step + 1} / ${U.lessons.length}`;
+  $('dialog').innerHTML = `<div class="text-base font-black text-[#a08560]">${U.title}</div>
+    <div class="text-xl md:text-2xl font-black text-[#5a4630] mt-0.5">${L.title}</div>`;
+
+  // 步驟切換按鈕列 + 講義內容 + 舉例口訣框
+  const tabsHtml = U.lessons.map((item, idx) => `
+    <button data-lstep="${idx}" class="lesson-step-tab btn px-3.5 py-1.5 rounded-xl border-3 border-[#eadfbf] bg-white font-black text-sm text-[#7a5a3a]">
+      觀念 ${idx + 1}：${item.title.replace(/^[^\s]+\s/, '').slice(0, 8)}
+    </button>
+  `).join('');
+
+  $('subContent').innerHTML = `
+    <div id="lessonStepTabs" class="flex flex-wrap gap-2 mb-3">${tabsHtml}</div>
+    <div class="lesson-body bg-white rounded-2xl border-4 border-[#eadfbf] p-5 text-lg md:text-xl leading-9 text-[#4a3926]">
+      ${L.body}
+    </div>
+    ${L.example ? `
+      <div class="bg-[#fff3c4] border-4 border-[#f2d06b] rounded-2xl p-4 mt-3 text-base md:text-lg font-bold text-[#6e4f1d] leading-8">
+        💡 <b>老師舉例 & 必背口訣：</b><br/>${L.example}
+      </div>
+    ` : ''}
+  `;
+
+  // 雙向同步教學步驟按鈕的 active-border
+  document.querySelectorAll('#lessonStepTabs .lesson-step-tab').forEach(btn => {
+    const idx = Number(btn.dataset.lstep);
+    btn.classList.toggle('active-border', idx === step);
+    btn.onclick = () => { quiz.step = idx; play('talk'); renderLessonStep(); };
+  });
+
+  $('options').innerHTML = '';
+  $('feedback').innerHTML = '';
+  $('backHubBtn').classList.remove('hidden');
+  $('prevStepBtn').classList.toggle('hidden', step === 0);
+  $('nextBtn').textContent = step < U.lessons.length - 1 ? '下一張教學卡 ▶' : '✍️ 學完了！開始本單元測驗 →';
+  $('nextBtn').classList.remove('hidden');
+}
+
+/* ---------- 單元闖關測驗（Quiz Mode） ---------- */
+function startUnitQuiz(key, unitId) {
+  const S = SUBJECTS[key];
+  const U = S.units.find(u => u.id === unitId) || S.units[0];
+  quiz = {
+    key,
+    mode: 'question',
+    unit: U,
+    title: U.title,
+    qs: U.questions.map(q => ({ ...q, unitId: U.id, unitTitle: U.title })),
+    idx: 0,
+    correct: 0,
+    tries: 0,
+    selected: null
+  };
+  showQuestion();
+}
+
+function startGrandMixQuiz(key) {
+  const S = SUBJECTS[key];
+  const all = [];
+  S.units.forEach(u => u.questions.forEach(q => all.push({ ...q, unitId: u.id, unitTitle: u.title })));
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  quiz = {
+    key,
+    mode: 'question',
+    unit: null,
+    title: `${S.place.split('・')[0]}・跨單元綜合大滿貫`,
+    qs: all.slice(0, 10),
+    idx: 0,
+    correct: 0,
+    tries: 0,
+    selected: null
+  };
+  showQuestion();
+}
+
+function startWrongDrill(key) {
+  const list = state.wrongBook.filter(w => w.subj === key);
+  if (!list.length) return;
+  quiz = {
+    key,
+    mode: 'question',
+    isWrongDrill: true,
+    unit: null,
+    title: `🩺 錯題特訓營`,
+    qs: list.slice(0, 10),
+    idx: 0,
+    correct: 0,
+    tries: 0,
+    selected: null
+  };
+  showQuestion();
+}
+
+function showQuestion() {
+  const Q = quiz.qs[quiz.idx];
+  quiz.mode = 'question'; quiz.selected = null; quiz.tries = 0;
+  $('qProgress').textContent = `${quiz.title}｜第 ${quiz.idx + 1} / ${quiz.qs.length} 題`;
+  $('dialog').innerHTML = `
+    <div class="text-xs font-black text-[#a08560] mb-1">📍 單元：${Q.unitTitle || quiz.title}</div>
+    <div class="font-bold text-xl leading-9">${Q.q}</div>
+  `;
+  $('subContent').innerHTML = '';
+  $('feedback').innerHTML = '';
+  $('backHubBtn').classList.remove('hidden');
+  $('prevStepBtn').classList.add('hidden');
+  $('nextBtn').classList.add('hidden');
+
+  const box = $('options'); box.innerHTML = '';
+  Q.o.forEach((txt, i) => {
+    const b = document.createElement('button');
+    b.className = 'opt btn text-left px-4 py-3 rounded-2xl border-4 border-[#eadfbf] bg-white text-lg font-bold text-[#5a4630]';
+    b.dataset.idx = i;
+    b.innerHTML = `<span class="inline-block w-8 h-8 rounded-full bg-[#fff6dc] text-center leading-8 mr-2 font-black">${'ABCD'[i]}</span>${txt}`;
+    b.onclick = () => answer(i);
+    box.appendChild(b);
+  });
+}
+
+function setOptionVisual(selectedIdx, cls) {
+  // 強制統一更新所有選項容器：選中者加上 active-border 與狀態樣式，其餘移除
+  document.querySelectorAll('#options .opt').forEach(el => {
+    const isSel = Number(el.dataset.idx) === selectedIdx;
+    el.classList.toggle('active-border', isSel);
+    el.classList.toggle(cls, isSel);
+    ['correct','wrong'].filter(c => c !== cls).forEach(c => el.classList.remove(c));
+  });
+}
+
+function recordWrongQuestion(Q) {
+  if (!state.wrongBook.some(w => w.q === Q.q)) {
+    state.wrongBook.push({
+      subj: quiz.key,
+      unitId: Q.unitId || '',
+      unitTitle: Q.unitTitle || quiz.title,
+      q: Q.q, o: Q.o, a: Q.a, hint: Q.hint, explain: Q.explain
+    });
+    save();
+  }
+}
+
+function removeWrongQuestion(Q) {
+  const idx = state.wrongBook.findIndex(w => w.q === Q.q);
+  if (idx !== -1) { state.wrongBook.splice(idx, 1); save(); }
+}
+
+function answer(i) {
+  if (!quiz || quiz.mode !== 'question') return;
+  const Q = quiz.qs[quiz.idx];
+  quiz.selected = i;
+  if (i === Q.a) {
+    setOptionVisual(i, 'correct');
+    quiz.mode = 'answered';
+    const gain = quiz.tries === 0 ? 2 : 1;
+    if (quiz.tries === 0) {
+      quiz.correct++;
+      if (quiz.isWrongDrill) removeWrongQuestion(Q);
+    }
+    addStars(gain);
+    play('coin'); confetti(55);
+    $('feedback').innerHTML = `
+      <div class="bg-[#d4f5e6] border-3 border-[#3fb98a] rounded-2xl p-3.5 text-[#1f6b4c]">
+        <div class="font-black text-lg">🎉 答對了！獲得 ⭐×${gain} ${quiz.isWrongDrill && quiz.tries===0 ? '（成功從錯題本消滅！）' : ''}</div>
+        <div class="text-base mt-1 font-bold text-[#2c5e49]">📘 <b>觀念詳解：</b>${Q.explain || ''}</div>
+      </div>
+    `;
+    document.querySelectorAll('#options .opt').forEach(el => el.disabled = true);
+    $('nextBtn').textContent = quiz.idx === quiz.qs.length - 1 ? '查看成績結算 →' : '下一題 →';
+    $('nextBtn').classList.remove('hidden');
+  } else {
+    quiz.tries++;
+    recordWrongQuestion(Q);
+    setOptionVisual(i, 'wrong');
+    play('wrong');
+    $('feedback').innerHTML = `
+      <div class="bg-[#fde0e0] border-3 border-[#e57373] rounded-2xl p-3.5 text-[#a93232]">
+        <div>🤔 <b>再想一想！老師提示：</b>${Q.hint}</div>
+        <div class="text-xs mt-1 text-[#8c4646]">（此題已自動加入「📘 知識筆記本 → 我的錯題本」，方便隨時複習！）</div>
+      </div>
+    `;
+  }
+}
+
+function finishQuiz() {
+  const S = SUBJECTS[quiz.key];
+  quiz.mode = 'done';
+  $('options').innerHTML = '';
+  $('subContent').innerHTML = '';
+  const ratio = quiz.correct / quiz.qs.length;
+  const earnedStars = ratio >= 0.9 ? 3 : ratio >= 0.6 ? 2 : ratio >= 0.3 ? 1 : 0;
+
+  if (quiz.unit) {
+    const prev = state.unitStars[quiz.unit.id] || 0;
+    if (earnedStars > prev) state.unitStars[quiz.unit.id] = earnedStars;
+  }
+
+  // 若該科已有至少 3 個單元達到 2 星以上（或通過大滿貫），授予該科領域徽章
+  const passedCount = S.units.filter(u => (state.unitStars[u.id] || 0) >= 2).length;
+  let newBadge = false;
+  if ((passedCount >= 3 || (!quiz.unit && ratio >= 0.6)) && !state.badges[quiz.key]) {
+    state.badges[quiz.key] = true;
+    newBadge = true;
+    addStars(5);
+  }
+  save(); updateHUD();
+
+  $('qProgress').textContent = `結算：一次答對 ${quiz.correct} / ${quiz.qs.length} 題`;
+  let msg = `<div class="text-2xl font-black mb-2">${'⭐'.repeat(earnedStars)}${'☆'.repeat(3-earnedStars)} 本回一次答對 ${quiz.correct} / ${quiz.qs.length} 題！</div>`;
+  if (newBadge) {
+    play('badge'); confetti(200);
+    msg += `<div class="text-[#c94a29] font-black text-xl">🏅 恭喜獲得「${S.place.split('・')[0]}領域徽章」＋ 額外 ⭐×5！</div>`;
+  } else if (earnedStars >= 2) {
+    confetti(90);
+    msg += `<div>表現太棒了！目前本科已通過 <b>${passedCount} / ${S.units.length}</b> 個單元（滿 3 單元即可獲頒領域徽章）！</div>`;
+  } else {
+    msg += `<div>別氣餒！可以先點 <b>「📖 課堂教學」</b> 複習老師整理的重點講義，再挑戰一次喔！</div>`;
+  }
+  $('dialog').innerHTML = msg;
+  $('feedback').innerHTML = '';
+  $('nextBtn').textContent = '返回單元列表';
+  $('nextBtn').classList.remove('hidden');
+}
+
+$('backHubBtn').onclick = () => { if (quiz) openSubjectHub(quiz.key, quiz.unit?.id || quiz.selectedUnitId); };
+$('prevStepBtn').onclick = () => { if (quiz && quiz.mode === 'lesson' && quiz.step > 0) { quiz.step--; renderLessonStep(); } };
+
+$('nextBtn').onclick = () => {
+  if (!quiz) return;
+  if (quiz.mode === 'hub') {
+    startLesson(quiz.key, quiz.selectedUnitId, 0);
+  } else if (quiz.mode === 'lesson') {
+    if (quiz.step < quiz.unit.lessons.length - 1) {
+      quiz.step++; play('talk'); renderLessonStep();
+    } else {
+      if (!state.lessonsRead[quiz.unit.id]) {
+        state.lessonsRead[quiz.unit.id] = true;
+        addStars(2); play('coin'); confetti(40);
+      }
+      startUnitQuiz(quiz.key, quiz.unit.id);
+    }
+  } else if (quiz.mode === 'answered') {
+    if (quiz.idx < quiz.qs.length - 1) { quiz.idx++; showQuestion(); }
+    else finishQuiz();
+  } else if (quiz.mode === 'done') {
+    openSubjectHub(quiz.key, quiz.unit?.id || quiz.selectedUnitId);
+  }
+};
+$('closeQuiz').onclick = closeAll;
+
+/* =========================================================
+ * 7. 隨身知識筆記本 & 錯題本（Notebook Modal）
+ * ========================================================= */
+let currentNoteTab = 'chinese';
+function openNotebook(tab = 'chinese') {
+  initAudio();
+  uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false);
+  $('quizModal').classList.add('hidden');
+  $('bagModal').classList.add('hidden');
+  $('noteModal').classList.remove('hidden');
+  renderNotebookTab(tab);
+}
+
+function renderNotebookTab(tab) {
+  currentNoteTab = tab;
+  $('wrongCountTab').textContent = state.wrongBook.length;
+  // 統一雙向更新筆記本頁籤的 active-border 樣式
+  document.querySelectorAll('#noteTabs .note-tab').forEach(btn => {
+    btn.classList.toggle('active-border', btn.dataset.ntab === tab);
+  });
+
+  const body = $('noteBody');
+  body.innerHTML = '';
+  if (tab === 'wrong') {
+    if (!state.wrongBook.length) {
+      body.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-xl font-bold text-[#7a5a3a]">🎉 太棒了！目前錯題本是空的，沒有待複習的錯題！</div>`;
+      return;
+    }
+    state.wrongBook.forEach((w, idx) => {
+      const box = document.createElement('div');
+      box.className = 'bg-white rounded-2xl border-4 border-[#eadfbf] p-4 space-y-2';
+      box.innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-black px-2.5 py-1 rounded-full bg-[#ffe3d6] text-[#c94a29]">${w.unitTitle}</span>
+          <button data-rm="${idx}" class="text-xs font-bold text-[#a08560] hover:text-red-600">✓ 我學會了（移除）</button>
+        </div>
+        <div class="font-black text-lg text-[#5a4630]">${idx + 1}. ${w.q}</div>
+        <div class="text-base font-bold text-[#2b8a63]">✅ 正確答案：（${'ABCD'[w.a]}）${w.o[w.a]}</div>
+        <div class="text-sm text-[#6e563a] bg-[#fff6dc] rounded-xl p-3">📘 <b>解析：</b>${w.explain || w.hint}</div>
+      `;
+      box.querySelector('[data-rm]').onclick = () => {
+        state.wrongBook.splice(idx, 1); save(); updateHUD(); renderNotebookTab('wrong');
+      };
+      body.appendChild(box);
+    });
+    return;
+  }
+
+  const S = SUBJECTS[tab];
+  S.units.forEach(u => {
+    const sec = document.createElement('div');
+    sec.className = 'bg-white rounded-2xl border-4 border-[#eadfbf] p-4 space-y-3';
+    const lessonsHtml = u.lessons.map((l, i) => `
+      <div class="bg-[#fffaf0] rounded-xl p-3.5 border-2 border-[#f0e4c8]">
+        <div class="font-black text-lg text-[#7a5a3a] mb-1">📌 觀念 ${i+1}：${l.title}</div>
+        <div class="lesson-body text-base leading-8 text-[#4a3926]">${l.body}</div>
+        ${l.example ? `<div class="mt-2 text-sm font-bold text-[#8c5828] bg-[#fff0c2] rounded-lg p-2.5">💡 ${l.example}</div>` : ''}
+      </div>
+    `).join('');
+    sec.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[#f0e4c8] pb-2">
+        <div>
+          <span class="text-xl font-black text-[#5a4630]">${u.title}</span>
+          <span class="text-sm text-[#a08560] ml-2">${u.summary}</span>
+        </div>
+        <button data-goquiz="${u.id}" class="btn px-3.5 py-1 rounded-xl bg-[#ff8a65] text-white font-black text-sm">✍️ 測驗此單元 (${u.questions.length}題)</button>
+      </div>
+      <div class="grid grid-cols-1 gap-2.5">${lessonsHtml}</div>
+    `;
+    sec.querySelector('[data-goquiz]').onclick = () => {
+      $('noteModal').classList.add('hidden');
+      $('quizModal').classList.remove('hidden');
+      const S = SUBJECTS[tab];
+      $('npcFace').textContent = S.face; $('npcName').textContent = S.npc; $('npcPlace').textContent = S.place;
+      startUnitQuiz(tab, u.id);
+    };
+    body.appendChild(sec);
+  });
+}
+
+document.querySelectorAll('#noteTabs .note-tab').forEach(btn => {
+  btn.onclick = () => renderNotebookTab(btn.dataset.ntab);
+});
+$('noteBtn').onclick = () => openNotebook(currentNoteTab);
+$('closeNote').onclick = closeAll;
+
+function closeAll() {
+  $('quizModal').classList.add('hidden');
+  $('bagModal').classList.add('hidden');
+  $('noteModal').classList.add('hidden');
+  uiOpen = false; quiz = null;
+}
+
+/* =========================================================
+ * 8. 星星、徽章 HUD、背包商店
+ * ========================================================= */
+function addStars(n) { state.stars += n; save(); updateHUD(); }
+function updateHUD() {
+  $('stars').textContent = state.stars; $('stars2').textContent = state.stars;
+  const count = Object.keys(state.badges).length;
+  $('badgeCount').textContent = count;
+  $('badgeBar').style.width = (count/4*100) + '%';
+  document.querySelectorAll('.badge').forEach(b => b.classList.toggle('locked', !state.badges[b.dataset.badge]));
+  npcs.forEach(n => n.marker.visible = !state.badges[n.key]);
+
+  const totalUnits = Object.values(SUBJECTS).reduce((s, x) => s + x.units.length, 0);
+  const readCount = Object.keys(state.lessonsRead).length;
+  const passedUnits = Object.values(state.unitStars).filter(v => v >= 2).length;
+  $('lessonStat').textContent = `${readCount}/${totalUnits}`;
+  $('unitStat').textContent = `${passedUnits}/${totalUnits}`;
+  $('wrongCountTab').textContent = state.wrongBook.length;
+}
+
+function renderShop() {
+  const box = $('shop'); box.innerHTML = '';
+  SHOP.forEach(item => {
+    const owned = !!state.owned[item.id];
+    const el = document.createElement('button');
+    el.className = 'shop-item btn rounded-2xl border-4 border-[#eadfbf] bg-white p-3 text-left';
+    el.dataset.id = item.id;
+    el.innerHTML = `<div class="text-4xl">${item.icon}</div><div class="font-black text-[#5a4630]">${item.name}</div>
+      <div class="text-sm font-bold ${owned ? 'text-[#3fb98a]' : 'text-amber-700'}">${owned ? (item.type==='hat' ? '已擁有・點擊裝備' : '已種下 🌼') : '⭐ ' + item.cost}</div>`;
+    el.onclick = () => buyOrEquip(item);
+    box.appendChild(el);
+  });
+  syncShopVisual();
+}
+function syncShopVisual() {
+  document.querySelectorAll('#shop .shop-item').forEach(el => el.classList.toggle('active-border', el.dataset.id === state.equipped));
+}
+function buyOrEquip(item) {
+  if (!state.owned[item.id]) {
+    if (state.stars < item.cost) { play('wrong'); $('stars2').parentElement.classList.add('opt','wrong'); setTimeout(()=>$('stars2').parentElement.classList.remove('opt','wrong'), 400); return; }
+    state.stars -= item.cost; state.owned[item.id] = true; play('coin'); confetti(40);
+    if (item.type === 'deco') buildBonusFlowers();
+  }
+  if (item.type === 'hat') { state.equipped = state.equipped === item.id ? null : item.id; applyHat(); }
+  save(); updateHUD(); renderShop();
+}
+function openBag() { if (uiOpen) closeAll(); uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false); renderShop(); $('bagModal').classList.remove('hidden'); }
+$('bagBtn').onclick = () => { initAudio(); openBag(); };
+$('closeBag').onclick = closeAll;
+$('muteBtn').onclick = () => {
+  initAudio(); musicOn = !musicOn;
+  musicGain.gain.value = musicOn ? 0.05 : 0;
+  $('muteBtn').textContent = musicOn ? '🎵 音樂：開' : '🔇 音樂：關';
+};
+
+/* =========================================================
+ * 9. Confetti 粒子特效
+ * ========================================================= */
+const cv = $('confetti'), cx = cv.getContext('2d');
+let parts = [];
+function resizeCv() { cv.width = innerWidth; cv.height = innerHeight; }
+resizeCv();
+function confetti(n) {
+  const cols = ['#ff8a65','#ffd54f','#7ed6b9','#8fd3fe','#f48fb1'];
+  for (let i=0;i<n;i++) parts.push({ x:innerWidth/2, y:innerHeight/2, vx:(Math.random()-.5)*16, vy:-Math.random()*16-4,
+    s:6+Math.random()*6, c:cols[i%5], r:Math.random()*6, vr:(Math.random()-.5)*.4, life:1, star:Math.random()<.3 });
+}
+function drawConfetti(dt) {
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts = parts.filter(p => p.life > 0);
+  for (const p of parts) {
+    p.vy += 30*dt; p.x += p.vx*60*dt*.5; p.y += p.vy*60*dt*.5; p.r += p.vr; p.life -= dt*.5;
+    cx.save(); cx.globalAlpha = Math.max(0,p.life); cx.translate(p.x,p.y); cx.rotate(p.r); cx.fillStyle = p.c;
+    if (p.star) { cx.font = `${p.s*2.5}px sans-serif`; cx.fillText('⭐', 0, 0); } else cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);
+    cx.restore();
+  }
+}
+
+/* =========================================================
+ * 10. 主迴圈
+ * ========================================================= */
+const clock = new THREE.Clock();
+function loop() {
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  if (!uiOpen) updatePlayer(dt);
+  else { camera.position.copy(camPos); camera.lookAt(camLook); }
+  trees.forEach(g => g.rotation.z = Math.sin(t*1.2 + g.userData.sway)*0.03);
+  npcs.forEach((n,i) => { n.obj.position.y = Math.abs(Math.sin(t*2 + i))*0.08; n.marker.rotation.y = t*2; n.marker.position.y = 3.4 + Math.sin(t*3)*.15; });
+  LANDMARKS.forEach(L => { if (L.group.userData.spin) L.group.userData.spin.rotation.z = t*.8; });
+  clouds.forEach(c => { c.position.x += dt*1.2; if (c.position.x > 90) c.position.x = -90; });
+  drawConfetti(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); resizeCv();
+});
+
+if ('ontouchstart' in window) {
+  $('mobileE').classList.remove('hidden');
+  $('mobileE').onclick = tryInteract;
+  renderer.domElement.addEventListener('touchstart', () => keys.KeyW = true);
+  renderer.domElement.addEventListener('touchend',   () => keys.KeyW = false);
+}
+
+$('startBtn').onclick = () => { initAudio(); $('welcome').remove(); };
+applyHat(); updateHUD();
+if (state.owned.seeds) buildBonusFlowers();
+loop();
+
+// 供自動化測試使用
+window.__island = {
+  state, SUBJECTS, SHOP, player, npcs,
+  openSubjectHub, selectUnitCard, startLesson, startUnitQuiz, startGrandMixQuiz,
+  answer, openNotebook, renderNotebookTab, buyOrEquip, teleportTo
+};
+</script>
+</body>
+</html>
