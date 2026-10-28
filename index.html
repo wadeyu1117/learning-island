@@ -151,22 +151,44 @@
             <span>📧 Gmail 家長帳號登入 / 註冊</span>
           </div>
 
-          <button id="googleQuickBtn" class="btn w-full py-2.5 px-4 rounded-2xl bg-[#4285F4] text-white font-black text-base flex items-center justify-center gap-2">
+          <button id="googleQuickBtn" type="button" onclick="window.__quickGoogleAuth && window.__quickGoogleAuth()" class="btn w-full py-2.5 px-4 rounded-2xl bg-[#4285F4] text-white font-black text-base flex items-center justify-center gap-2 cursor-pointer">
             <span class="bg-white text-[#4285F4] rounded-full w-6 h-6 inline-flex items-center justify-center font-black">G</span>
-            使用 Google (Gmail) 帳號一鍵快速登入
+            使用 Google (Gmail) 帳號一鍵快速登入 / 註冊
           </button>
 
-          <div class="text-center text-xs font-bold text-[#a08560]">—— 或輸入 Gmail 註冊／登入 ——</div>
+          <!-- Google 帳號選擇器彈出框 -->
+          <div id="googleChooserBox" class="hidden bg-[#f8f9fa] rounded-2xl border-3 border-[#4285F4] p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black text-[#4285F4]">🔵 選擇或輸入您的 Google (Gmail) 帳號</span>
+              <button type="button" id="closeGoogleChooser" class="text-xs font-bold text-gray-500">✕</button>
+            </div>
+            <button type="button" data-gaccount="wadeyu@gmail.com" class="google-acc-item btn w-full p-2 rounded-xl bg-white border-2 border-[#dadce0] flex items-center gap-2.5 text-left hover:bg-blue-50">
+              <span class="w-8 h-8 rounded-full bg-[#4285F4] text-white flex items-center justify-center font-black text-sm">W</span>
+              <div>
+                <div class="text-xs font-black text-gray-800">Wade Yu</div>
+                <div class="text-[11px] font-bold text-gray-500">wadeyu@gmail.com</div>
+              </div>
+              <span class="ml-auto text-xs font-black text-[#4285F4]">一鍵登入 →</span>
+            </button>
+            <div class="flex gap-1.5 pt-1">
+              <input id="googleCustomMail" type="email" placeholder="或輸入其他 Gmail 直接註冊登入..."
+                class="flex-1 px-2.5 py-1.5 rounded-xl border-2 border-[#dadce0] text-xs font-bold text-gray-800" />
+              <button type="button" id="googleCustomConfirmBtn" class="btn px-3 py-1.5 rounded-xl bg-[#4285F4] text-white text-xs font-black">確定</button>
+            </div>
+          </div>
+
+          <div class="text-center text-xs font-bold text-[#a08560]">—— 或於下方輸入 Gmail 註冊／登入 ——</div>
 
           <div class="space-y-2">
             <label class="block text-xs font-black text-[#7a5a3a]">家長 Gmail 信箱：</label>
-            <input id="gmailInput" type="email" placeholder="example@gmail.com" value="wadeyu@gmail.com"
+            <input id="gmailInput" type="email" placeholder="請輸入您的 Gmail（例如 name@gmail.com）" value="wadeyu@gmail.com"
               class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630] focus:outline-none focus:border-[#ff8a65]" />
             <label class="block text-xs font-black text-[#7a5a3a]">密碼（首次輸入即自動註冊）：</label>
             <input id="passInput" type="password" placeholder="請輸入密碼（至少 4 碼）" value="1234"
               class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630] focus:outline-none focus:border-[#ff8a65]" />
             <div id="authErrorMsg" class="text-xs font-bold text-red-600 hidden"></div>
-            <button id="gmailSubmitBtn" class="btn w-full py-2.5 rounded-2xl bg-[#ff8a65] text-white font-black text-base mt-1">
+            <div id="authSuccessToast" class="text-xs font-black text-[#1f7a58] bg-[#d4f5e6] border-2 border-[#3fb98a] rounded-xl p-2 hidden"></div>
+            <button id="gmailSubmitBtn" type="button" onclick="window.__submitGmailForm && window.__submitGmailForm()" class="btn w-full py-2.5 rounded-2xl bg-[#ff8a65] text-white font-black text-base mt-1 cursor-pointer">
               登入 / 註冊並進入孩子角色選擇 →
             </button>
           </div>
@@ -203,8 +225,13 @@
       <div id="profileCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
 
       <!-- 新增 / 編輯小孩 Profile 表單（含 8 種 3D 角色選擇器） -->
-      <div class="bg-white rounded-3xl border-4 border-[#eadfbf] p-5 space-y-3">
-        <div class="font-black text-lg text-[#5a4630]">➕ 為孩子建立新學習檔案（可選 1～6 年級與 8 種 3D 動物角色）</div>
+      <div id="profileFormBox" class="bg-white rounded-3xl border-4 border-[#eadfbf] p-5 space-y-3 transition-all">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div id="profileFormTitle" class="font-black text-lg text-[#5a4630]">➕ 為孩子建立新學習檔案（可選 1～6 年級與 8 種 3D 動物角色）</div>
+          <button id="cancelEditProfileBtn" type="button" class="hidden btn px-3 py-1 rounded-xl bg-[#eadfbf] text-[#7a5a3a] font-black text-xs">
+            ✕ 取消修改（返回新增模式）
+          </button>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label class="block text-xs font-black text-[#7a5a3a] mb-1">1. 小朋友暱稱：</label>
@@ -223,7 +250,7 @@
             </select>
           </div>
           <div class="flex items-end">
-            <button id="createProfileBtn" class="btn w-full py-2.5 rounded-2xl bg-[#3fb98a] text-white font-black text-base">
+            <button id="createProfileBtn" type="button" class="btn w-full py-2.5 rounded-2xl bg-[#3fb98a] text-white font-black text-base">
               ✨ 新增小朋友檔案並立即登島
             </button>
           </div>
@@ -233,6 +260,7 @@
           <label class="block text-xs font-black text-[#7a5a3a] mb-1.5">3. 選擇小朋友在 3D 島嶼上的專屬動物角色（共 8 種角色，會直接改變 3D 人物造型！）：</label>
           <div id="avatarPickerGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
         </div>
+        <div id="profileMsgBar" class="hidden text-xs font-black text-[#1f7a58] bg-[#d4f5e6] border-2 border-[#3fb98a] rounded-xl p-2"></div>
       </div>
 
       <div class="flex justify-end pt-1">
@@ -361,6 +389,38 @@
 </div>
 
 <canvas id="confetti" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+<!-- 保底互動腳本：即使 CDN 載入較慢，Gmail 快速註冊與登入也能立即反應！ -->
+<script>
+window.__quickGoogleAuth = function() {
+  var chooser = document.getElementById('googleChooserBox');
+  if (chooser && chooser.classList.contains('hidden')) {
+    chooser.classList.remove('hidden');
+    return;
+  }
+  var mail = (document.getElementById('gmailInput') && document.getElementById('gmailInput').value) || 'wadeyu@gmail.com';
+  if (window.__island && window.__island.loginWithGmail) {
+    window.__island.loginWithGmail(mail, 'google-oauth');
+  } else {
+    document.getElementById('authSection').classList.add('hidden');
+    var ps = document.getElementById('profileSection');
+    ps.classList.remove('hidden'); ps.classList.add('flex');
+    document.getElementById('loggedParentEmail').textContent = mail;
+  }
+};
+window.__submitGmailForm = function() {
+  var mail = (document.getElementById('gmailInput') && document.getElementById('gmailInput').value) || 'wadeyu@gmail.com';
+  var pass = (document.getElementById('passInput') && document.getElementById('passInput').value) || '1234';
+  if (window.__island && window.__island.loginWithGmail) {
+    window.__island.loginWithGmail(mail, pass);
+  } else {
+    document.getElementById('authSection').classList.add('hidden');
+    var ps = document.getElementById('profileSection');
+    ps.classList.remove('hidden'); ps.classList.add('flex');
+    document.getElementById('loggedParentEmail').textContent = mail;
+  }
+};
+</script>
 
 <script type="module">
 import * as THREE from 'three';
@@ -560,40 +620,50 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x8fd3fe);
 scene.fog = new THREE.FogExp2(0xabe0ff, 0.0065);
 
-const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 300);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.5, 260);
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xfffbe6, 0x6ab04c, 0.85));
+scene.add(new THREE.HemisphereLight(0xfffbe6, 0x6ab04c, 0.88));
 const sun = new THREE.DirectionalLight(0xfff3d1, 1.15);
 sun.position.set(35, 55, 30);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0008;
+sun.shadow.normalBias = 0.04;
 const d = 58;
 Object.assign(sun.shadow.camera, { left:-d, right:d, top:d, bottom:-d, near:10, far:140 });
 scene.add(sun);
 
-const mat = (color, flat=true) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, flatShading: flat });
+const mat = (color, flat=true, polyOffset=0) => new THREE.MeshStandardMaterial({
+  color,
+  roughness: 0.85,
+  metalness: 0.05,
+  flatShading: flat,
+  polygonOffset: polyOffset !== 0,
+  polygonOffsetFactor: polyOffset,
+  polygonOffsetUnits: polyOffset
+});
 const mesh = (geo, c, shadow=true) => {
   const m = new THREE.Mesh(geo, typeof c === 'number' ? mat(c) : c);
   m.castShadow = shadow; m.receiveShadow = shadow; return m;
 };
 
-// 海面與浮空島地形
+// 海面與浮空島地形（分層錯開高度，徹底消除 Z-fighting 條紋閃爍）
 const sea = mesh(new THREE.CylinderGeometry(160, 160, 4, 48), mat(0x56b4e9, false), false);
-sea.position.y = -3.2; scene.add(sea);
+sea.position.y = -3.8; scene.add(sea);
 
-const beach = mesh(new THREE.CylinderGeometry(52, 46, 5, 36), 0xf6e2b3);
-beach.position.y = -2.3; scene.add(beach);
+const beach = mesh(new THREE.CylinderGeometry(52, 46, 4.6, 36), 0xf6e2b3, false);
+beach.position.y = -2.3; beach.receiveShadow = true; scene.add(beach);
 
-const grass = mesh(new THREE.CylinderGeometry(47, 44, 2.4, 36), 0x88d47e);
-grass.position.y = -1.0; scene.add(grass);
+const grass = mesh(new THREE.CylinderGeometry(47, 44, 2.4, 36), 0x88d47e, false);
+grass.position.y = -1.0; grass.receiveShadow = true; scene.add(grass);
 
-// 5 條放射狀步道通往 5 大學科地標
+// 5 條放射狀步道通往 5 大學科地標（每條步道微幅分層 + polygonOffset，根除共面條紋閃動）
 const LANDMARK_COORDS = [
   { key: 'chinese', x: -24, z: -20 },
   { key: 'math',    x:  24, z: -20 },
@@ -602,14 +672,17 @@ const LANDMARK_COORDS = [
   { key: 'social',  x:  24, z:  20 }
 ];
 
-const centerPlaza = mesh(new THREE.CylinderGeometry(6.5, 6.5, 0.14, 24), 0xe8cfa1, false);
-centerPlaza.position.y = 0.21; scene.add(centerPlaza);
+const roadBaseMat = mat(0xe8cfa1, true, -2);
+const centerPlaza = mesh(new THREE.CylinderGeometry(6.5, 6.5, 0.14, 24), mat(0xe8cfa1, true, -3), false);
+centerPlaza.position.y = 0.25; centerPlaza.receiveShadow = true; scene.add(centerPlaza);
 
-LANDMARK_COORDS.forEach(coord => {
+LANDMARK_COORDS.forEach((coord, idx) => {
   const dist = Math.hypot(coord.x, coord.z);
-  const road = mesh(new THREE.BoxGeometry(3.4, 0.12, dist), 0xe8cfa1, false);
-  road.position.set(coord.x / 2, 0.2, coord.z / 2);
+  const road = mesh(new THREE.BoxGeometry(3.4, 0.10, dist), roadBaseMat, false);
+  // 每條步道給予 0.003 的微小高度差，避免在中央廣場交會處與草地頂面產生 Z-fighting 條紋
+  road.position.set(coord.x / 2, 0.22 + idx * 0.003, coord.z / 2);
   road.rotation.y = Math.atan2(coord.x, coord.z);
+  road.receiveShadow = true;
   scene.add(road);
 });
 
@@ -1087,6 +1160,15 @@ $('closePubModal').onclick = closeAll;
  * 10. 家長 Gmail 註冊登入 & 兒童多組 Profile 管理（8 種角色）
  * ========================================================= */
 let selectedNewAvatarId = 'fox';
+let editingProfileId = null;
+
+function showProfileToast(msg) {
+  const bar = $('profileMsgBar');
+  if (!bar) return;
+  bar.textContent = msg;
+  bar.classList.remove('hidden');
+  setTimeout(() => bar.classList.add('hidden'), 3200);
+}
 
 function renderAvatarPicker() {
   const box = $('avatarPickerGrid');
@@ -1118,6 +1200,64 @@ function selectAvatarOption(avId) {
   });
 }
 
+function startEditProfile(profileId) {
+  const acc = getCurrentAccount();
+  const target = acc.profiles.find(p => p.id === profileId);
+  if (!target) return;
+  editingProfileId = target.id;
+  $('newChildName').value = target.name;
+  $('newChildGrade').value = String(target.grade);
+  selectAvatarOption(target.avatarId);
+  $('profileFormTitle').innerHTML = `✏️ 正在修改【<span class="text-[#c94a29]">${target.name}</span>】的學習檔案`;
+  $('createProfileBtn').textContent = '💾 儲存修改';
+  $('createProfileBtn').className = 'btn w-full py-2.5 rounded-2xl bg-[#ff8a65] text-white font-black text-base';
+  $('cancelEditProfileBtn').classList.remove('hidden');
+  $('profileFormBox').classList.add('active-border');
+  syncProfileCardsVisual();
+}
+
+function cancelEditProfile() {
+  editingProfileId = null;
+  $('newChildName').value = '';
+  $('newChildGrade').value = String(state.grade || '5');
+  $('profileFormTitle').textContent = '➕ 為孩子建立新學習檔案（可選 1～6 年級與 8 種 3D 動物角色）';
+  $('createProfileBtn').textContent = '✨ 新增小朋友檔案並立即登島';
+  $('createProfileBtn').className = 'btn w-full py-2.5 rounded-2xl bg-[#3fb98a] text-white font-black text-base';
+  $('cancelEditProfileBtn').classList.add('hidden');
+  $('profileFormBox').classList.remove('active-border');
+  syncProfileCardsVisual();
+}
+
+function deleteProfile(profileId) {
+  const acc = getCurrentAccount();
+  if (acc.profiles.length <= 1) {
+    showProfileToast('⚠️ 至少需要保留 1 個小朋友檔案喔！您可以點擊「✏️ 修改」直接改名字或年級。');
+    play('wrong');
+    return false;
+  }
+  const idx = acc.profiles.findIndex(p => p.id === profileId);
+  if (idx === -1) return false;
+  const removedName = acc.profiles[idx].name;
+  acc.profiles.splice(idx, 1);
+  if (editingProfileId === profileId) cancelEditProfile();
+  if (acc.activeProfileId === profileId) {
+    acc.activeProfileId = acc.profiles[0].id;
+    state = acc.profiles[0];
+    rebuildPlayerAvatar(state.avatarId);
+    switchGrade(state.grade);
+    applyHat();
+  }
+  saveDB();
+  updateHUD();
+  renderProfileCards();
+  showProfileToast(`🗑️ 已刪除「${removedName}」的檔案！`);
+  return true;
+}
+
+if ($('cancelEditProfileBtn')) {
+  $('cancelEditProfileBtn').onclick = () => cancelEditProfile();
+}
+
 function renderProfileCards() {
   const acc = getCurrentAccount();
   $('loggedParentEmail').textContent = acc.email;
@@ -1133,11 +1273,17 @@ function renderProfileCards() {
     card.dataset.pid = prof.id;
     card.className = `profile-card btn cursor-pointer rounded-2xl border-4 border-[#eadfbf] bg-white p-4 flex flex-col justify-between gap-2`;
     card.innerHTML = `
-      <div class="flex items-center gap-3">
-        <div class="text-4xl w-14 h-14 rounded-2xl bg-[#fff4d6] flex items-center justify-center border-2 border-[#e2cfa8]">${av.icon}</div>
-        <div>
-          <div class="font-black text-lg text-[#5a4630]">${prof.name}</div>
-          <div class="text-xs font-black text-[#c94a29]">${gCfg.name}｜${av.name.split(' ')[0]}</div>
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <div class="text-4xl w-14 h-14 rounded-2xl bg-[#fff4d6] flex items-center justify-center border-2 border-[#e2cfa8] shrink-0">${av.icon}</div>
+          <div>
+            <div class="font-black text-lg text-[#5a4630] leading-tight">${prof.name}</div>
+            <div class="text-xs font-black text-[#c94a29] mt-0.5">${gCfg.name}｜${av.name.split(' ')[0]}</div>
+          </div>
+        </div>
+        <div class="flex gap-1 shrink-0">
+          <button type="button" data-editp="${prof.id}" class="px-2.5 py-1 rounded-xl bg-[#fff3d1] hover:bg-[#ffe082] text-[#7a5a3a] font-black text-xs border border-[#e2cfa8]" title="修改此檔案">✏️ 修改</button>
+          <button type="button" data-delp="${prof.id}" class="px-2 py-1 rounded-xl bg-[#fdeaea] hover:bg-[#f8bbd0] text-[#c94a29] font-black text-xs border border-[#f5c6cb]" title="刪除此檔案">🗑️</button>
         </div>
       </div>
       <div class="text-xs font-bold text-[#7a5a3a] bg-[#fff9eb] rounded-xl p-2 flex justify-between">
@@ -1146,7 +1292,22 @@ function renderProfileCards() {
         <span>🏆 通關：${passCount}</span>
       </div>
     `;
-    card.onclick = () => selectProfile(prof.id);
+    card.onclick = (e) => {
+      const editBtn = e.target.closest('[data-editp]');
+      const delBtn = e.target.closest('[data-delp]');
+      if (editBtn) {
+        e.stopPropagation();
+        selectProfile(prof.id);
+        startEditProfile(prof.id);
+        return;
+      }
+      if (delBtn) {
+        e.stopPropagation();
+        deleteProfile(prof.id);
+        return;
+      }
+      selectProfile(prof.id);
+    };
     grid.appendChild(card);
   });
   syncProfileCardsVisual();
@@ -1181,9 +1342,10 @@ function loginWithGmail(emailStr, passStr = '1234') {
     return false;
   }
   $('authErrorMsg').classList.add('hidden');
+  const isNewAccount = !db.accounts[cleanEmail];
   db.currentEmail = cleanEmail;
-  if (!db.accounts[cleanEmail]) {
-    const firstChild = createDefaultChildProfile('寶貝一號', '5', 'fox');
+  if (isNewAccount) {
+    const firstChild = createDefaultChildProfile('寶貝一號（五年級）', '5', 'fox');
     db.accounts[cleanEmail] = {
       email: cleanEmail,
       pass: passStr || '1234',
@@ -1205,16 +1367,46 @@ function loginWithGmail(emailStr, passStr = '1234') {
   return true;
 }
 
-$('googleQuickBtn').onclick = () => {
+window.__quickGoogleAuth = () => {
   initAudio(); play('coin');
+  const chooser = $('googleChooserBox');
+  if (chooser && chooser.classList.contains('hidden')) {
+    chooser.classList.remove('hidden');
+    return;
+  }
   const mail = ($('gmailInput').value || 'wadeyu@gmail.com').trim();
   loginWithGmail(mail, 'google-oauth');
 };
 
-$('gmailSubmitBtn').onclick = () => {
+window.__submitGmailForm = () => {
   initAudio(); play('coin');
   loginWithGmail($('gmailInput').value, $('passInput').value);
 };
+
+$('googleQuickBtn').onclick = window.__quickGoogleAuth;
+$('gmailSubmitBtn').onclick = window.__submitGmailForm;
+if ($('closeGoogleChooser')) {
+  $('closeGoogleChooser').onclick = () => $('googleChooserBox').classList.add('hidden');
+}
+document.querySelectorAll('.google-acc-item').forEach(btn => {
+  btn.onclick = () => {
+    initAudio(); play('coin');
+    loginWithGmail(btn.dataset.gaccount, 'google-oauth');
+  };
+});
+if ($('googleCustomConfirmBtn')) {
+  $('googleCustomConfirmBtn').onclick = () => {
+    initAudio(); play('coin');
+    const customMail = ($('googleCustomMail').value || 'wadeyu@gmail.com').trim();
+    loginWithGmail(customMail, 'google-oauth');
+  };
+}
+['gmailInput', 'passInput'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); window.__submitGmailForm(); }
+  });
+});
 
 $('logoutBtn').onclick = () => {
   $('profileSection').classList.add('hidden');
@@ -1224,14 +1416,32 @@ $('logoutBtn').onclick = () => {
 
 $('createProfileBtn').onclick = () => {
   initAudio();
-  const name = ($('newChildName').value || '').trim() || `小冒險家 ${getCurrentAccount().profiles.length + 1}`;
+  const acc = getCurrentAccount();
+  if (editingProfileId) {
+    const target = acc.profiles.find(p => p.id === editingProfileId);
+    if (target) {
+      const updatedName = ($('newChildName').value || '').trim();
+      if (updatedName) target.name = updatedName;
+      target.grade = String($('newChildGrade').value || '5');
+      target.avatarId = selectedNewAvatarId;
+      saveDB();
+      selectProfile(target.id);
+      cancelEditProfile();
+      renderProfileCards();
+      showProfileToast(`✅ 已成功更新「${target.name}」的角色與年級設定！`);
+      play('coin'); confetti(35);
+      return;
+    }
+    cancelEditProfile();
+  }
+  const name = ($('newChildName').value || '').trim() || `小冒險家 ${acc.profiles.length + 1}`;
   const grade = $('newChildGrade').value || '5';
   const newProf = createDefaultChildProfile(name, grade, selectedNewAvatarId);
-  const acc = getCurrentAccount();
   acc.profiles.push(newProf);
   $('newChildName').value = '';
   selectProfile(newProf.id);
   renderProfileCards();
+  showProfileToast(`🎉 已新增「${newProf.name}」的學習檔案！`);
   play('badge'); confetti(60);
 };
 
@@ -1853,7 +2063,7 @@ window.__island = {
   get state() { return state; },
   get SUBJECTS() { return SUBJECTS; },
   AVATARS, SHOP, CURRICULUM_ALL, player, npcs,
-  loginWithGmail, selectProfile, selectAvatarOption, switchGrade,
+  loginWithGmail, selectProfile, startEditProfile, cancelEditProfile, deleteProfile, selectAvatarOption, switchGrade,
   openSubjectHub, selectUnitCard, startLesson, startUnitQuiz, startGrandMixQuiz,
   answer, openNotebook, renderNotebookTab, buyOrEquip, teleportTo
 };
