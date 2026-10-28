@@ -11,8 +11,9 @@
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
 <style>
-  * { font-family: 'Zen Maru Gothic', 'Microsoft JhengHei', sans-serif; user-select: none; }
-  body { margin: 0; overflow: hidden; background: #8fd3fe; }
+  * { font-family: 'Zen Maru Gothic', 'Microsoft JhengHei', sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  body { margin: 0; overflow: hidden; background: #8fd3fe; touch-action: none; }
+  input, select, button { touch-action: manipulation; }
   .card {
     background: #fffdf4;
     border: 4px solid #e6d5b8;
@@ -108,15 +109,16 @@
 </div>
 
 <!-- ===== 左下角：操作指引 + 5 大地標快速傳送門 ===== -->
-<div class="fixed bottom-4 left-4 z-20 card px-4 py-3 text-[#7a5a3a] space-y-2 max-w-md">
-  <div class="font-black text-sm flex items-center justify-between">
-    <span>🎮 島嶼冒險操作＆地標快速傳送</span>
+<div class="fixed bottom-4 left-4 z-20 card px-3.5 py-2.5 text-[#7a5a3a] space-y-1.5 max-w-sm">
+  <div class="font-black text-xs md:text-sm flex items-center justify-between gap-2">
+    <span>🎮 地標快速傳送＆平板觸控導航</span>
     <span id="activeParentMail" class="text-xs text-[#a08560] font-bold"></span>
   </div>
-  <div class="text-xs space-y-0.5">
-    <div><kbd class="px-1.5 py-0.5 bg-[#f4e6c6] rounded font-black">W A S D</kbd> / <kbd class="px-1.5 py-0.5 bg-[#f4e6c6] rounded font-black">方向鍵</kbd> 移動・<kbd class="px-1.5 py-0.5 bg-[#f4e6c6] rounded font-black">空白鍵</kbd> 跳躍・<kbd class="px-1.5 py-0.5 bg-[#ff8a65] text-white rounded font-black">E</kbd> 進入學堂</div>
+  <div class="text-[11px] leading-snug text-[#8c6d46] font-bold">
+    📱 <b>平板/觸控</b>：點地面自動走去・點動物直接上課・右側搖桿移動<br/>
+    ⌨️ <b>電腦鍵盤</b>：<kbd class="px-1 bg-[#f4e6c6] rounded font-black">WASD</kbd>/<kbd class="px-1 bg-[#f4e6c6] rounded font-black">方向鍵</kbd> 移動・<kbd class="px-1 bg-[#f4e6c6] rounded font-black">空白鍵</kbd> 跳躍・<kbd class="px-1 bg-[#ff8a65] text-white rounded font-black">E</kbd> 對話
   </div>
-  <div id="tpButtonsRow" class="grid grid-cols-3 gap-1.5 pt-1">
+  <div id="tpButtonsRow" class="grid grid-cols-3 gap-1.5 pt-0.5">
     <button data-tp="chinese" class="tp-btn btn text-xs font-black px-2 py-1.5 rounded-xl bg-[#ffe8df] text-[#b44b2b] border-2 border-[#f3c3b1]">📖 國語營地</button>
     <button data-tp="math"    class="tp-btn btn text-xs font-black px-2 py-1.5 rounded-xl bg-[#e2f0ff] text-[#2664a8] border-2 border-[#b3d4f7]">📐 數學工坊</button>
     <button data-tp="english" class="tp-btn btn text-xs font-black px-2 py-1.5 rounded-xl bg-[#f3e5f5] text-[#7b1fa2] border-2 border-[#ce93d8]">🔤 英語村</button>
@@ -126,10 +128,37 @@
 </div>
 
 <!-- ===== 靠近 NPC 互動提示 ===== -->
-<div id="prompt" class="hidden fixed bottom-28 left-1/2 -translate-x-1/2 z-20 pill px-6 py-2.5 text-xl font-black text-[#7a5a3a] pop cursor-pointer">
-  按 <span class="px-2.5 py-0.5 bg-[#ff8a65] text-white rounded-full">E</span> 或點此與 <span id="promptName"></span> 開始學習！
+<div id="prompt" class="hidden fixed bottom-36 left-1/2 -translate-x-1/2 z-20 pill px-6 py-2.5 text-lg md:text-xl font-black text-[#7a5a3a] pop cursor-pointer">
+  👆 點此（或按 <span class="px-2.5 py-0.5 bg-[#ff8a65] text-white rounded-full">E</span>）與 <span id="promptName"></span> 開始學習！
 </div>
-<button id="mobileE" class="hidden fixed bottom-6 right-6 z-20 btn bg-[#ff8a65] text-white text-xl font-black w-20 h-20 rounded-full">互動 E</button>
+
+<!-- ===== 右下角：平板＆觸控螢幕專屬虛擬控制器（360° 虛擬搖桿 + 方向鍵 + 跳躍 + 進入學堂） ===== -->
+<div id="tabletControlsPanel" class="fixed bottom-4 right-4 z-20 flex items-end gap-3 select-none">
+  <!-- 動作按鈕區：跳躍 & 進入學堂互動 -->
+  <div class="flex flex-col gap-2 items-end">
+    <button id="touchActionBtn" type="button" class="btn px-4 py-3 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] border-4 border-white font-black text-sm md:text-base shadow-lg flex items-center gap-1.5 transition-all">
+      <span class="text-xl">💬</span>
+      <span id="touchActionLabel">靠近老師可上課</span>
+    </button>
+    <button id="touchJumpBtn" type="button" class="btn w-16 h-16 rounded-full bg-[#ffd54f] text-[#5a4630] border-4 border-white font-black text-sm shadow-lg flex flex-col items-center justify-center leading-tight active:scale-95">
+      <span class="text-xl">🦘</span>
+      <span>跳躍</span>
+    </button>
+  </div>
+
+  <!-- 360° 虛擬搖桿 + 十字方向按鈕複合盤 -->
+  <div id="joystickZone" class="relative w-36 h-36 rounded-full bg-[#fffdf4]/85 border-4 border-[#e2cfa8] shadow-xl flex items-center justify-center touch-none">
+    <!-- 上下左右方向熱區按鈕（可單擊微調或長按行走） -->
+    <button type="button" data-dpad="up"    class="dpad-btn absolute top-1 left-1/2 -translate-x-1/2 w-10 h-9 rounded-t-xl bg-[#f4e6c6]/90 text-[#5a4630] font-black text-sm flex items-center justify-center">▲</button>
+    <button type="button" data-dpad="down"  class="dpad-btn absolute bottom-1 left-1/2 -translate-x-1/2 w-10 h-9 rounded-b-xl bg-[#f4e6c6]/90 text-[#5a4630] font-black text-sm flex items-center justify-center">▼</button>
+    <button type="button" data-dpad="left"  class="dpad-btn absolute left-1 top-1/2 -translate-y-1/2 w-9 h-10 rounded-l-xl bg-[#f4e6c6]/90 text-[#5a4630] font-black text-sm flex items-center justify-center">◀</button>
+    <button type="button" data-dpad="right" class="dpad-btn absolute right-1 top-1/2 -translate-y-1/2 w-9 h-10 rounded-r-xl bg-[#f4e6c6]/90 text-[#5a4630] font-black text-sm flex items-center justify-center">▶</button>
+    <!-- 中央可拖曳搖桿頭 -->
+    <div id="joystickKnob" class="w-14 h-14 rounded-full bg-[#ff8a65] border-4 border-white shadow-md flex items-center justify-center text-white font-black text-xs pointer-events-none transition-transform duration-75">
+      🐾 移動
+    </div>
+  </div>
+</div>
 
 <!-- ===== 1. Gmail 家長登入 & 兒童多組 Profile 選擇彈窗（支援 8 種 3D 角色） ===== -->
 <div id="authProfileModal" class="fixed inset-0 bg-[#56a8dc]/85 flex items-center justify-center z-40 p-4 overflow-y-auto">
@@ -953,20 +982,219 @@ function applyHat() {
 }
 
 /* =========================================================
- * 8. 角色移動、跳躍與快速傳送控制
+ * 8. 角色移動、跳躍、快速傳送＆平板觸控全方位控制
  * ========================================================= */
 const keys = {};
 let vy = 0, onGround = true, walkTime = 0, nearestNpc = null, uiOpen = true;
+let joyVec = { x: 0, z: 0 };
+let activeDpadDir = null;
+let autoWalkTarget = null; // { x, z, npcKey? }
+
+// 地面點擊自動尋路光圈標記
+const tapTargetRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.45, 0.8, 24),
+  new THREE.MeshBasicMaterial({ color: 0xffeb3b, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+);
+tapTargetRing.rotation.x = -Math.PI / 2;
+tapTargetRing.position.y = 0.28;
+tapTargetRing.visible = false;
+scene.add(tapTargetRing);
+
+function triggerJump() {
+  initAudio();
+  if (onGround && !uiOpen) {
+    vy = 9.5;
+    onGround = false;
+    play('jump');
+    return true;
+  }
+  return false;
+}
+
+function setDpadDirection(dir) {
+  activeDpadDir = dir;
+  autoWalkTarget = null;
+  tapTargetRing.visible = false;
+  document.querySelectorAll('#joystickZone .dpad-btn').forEach(btn => {
+    btn.classList.toggle('active-border', btn.dataset.dpad === dir);
+  });
+  const knob = $('joystickKnob');
+  if (knob) {
+    const map = { up: [0, -24], down: [0, 24], left: [-24, 0], right: [24, 0] };
+    const [tx, ty] = map[dir] || [0, 0];
+    knob.style.transform = `translate(${tx}px, ${ty}px)`;
+  }
+}
+
+function setAutoWalkTarget(x, z, npcKey = null) {
+  initAudio();
+  const r = Math.hypot(x, z);
+  if (r > 42) { x *= 42 / r; z *= 42 / r; }
+  autoWalkTarget = { x, z, npcKey };
+  tapTargetRing.position.set(x, 0.28, z);
+  tapTargetRing.visible = true;
+}
 
 addEventListener('keydown', e => {
   initAudio();
   keys[e.code] = true;
-  if (e.code === 'Space' && onGround && !uiOpen) { vy = 9.5; onGround = false; play('jump'); }
+  if (['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) {
+    autoWalkTarget = null;
+    tapTargetRing.visible = false;
+  }
+  if (e.code === 'Space') triggerJump();
   if (e.code === 'KeyE' && !uiOpen && nearestNpc) tryInteract();
   if (e.code === 'KeyN') { if ($('noteModal').classList.contains('hidden')) openNotebook(); else closeAll(); }
   if (e.code === 'Escape' && uiOpen) closeAll();
 });
 addEventListener('keyup', e => keys[e.code] = false);
+
+// 平板與觸控螢幕：虛擬搖桿 + 十字方向按鈕 + 跳躍與上課按鈕
+const joyZone = $('joystickZone');
+const joyKnob = $('joystickKnob');
+let joyPointerId = null;
+
+function updateJoystickFromPoint(clientX, clientY) {
+  if (!joyZone) return;
+  const rect = joyZone.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const maxR = rect.width * 0.34;
+  let dx = clientX - cx;
+  let dy = clientY - cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > maxR && dist > 0) {
+    dx = (dx / dist) * maxR;
+    dy = (dy / dist) * maxR;
+  }
+  joyVec.x = Math.abs(dx) > 4 ? dx / maxR : 0;
+  joyVec.z = Math.abs(dy) > 4 ? dy / maxR : 0;
+  autoWalkTarget = null;
+  tapTargetRing.visible = false;
+  if (joyKnob) joyKnob.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+
+  // 同步高亮對應方向的 D-Pad 視覺狀態
+  let dir = null;
+  if (Math.hypot(joyVec.x, joyVec.z) > 0.28) {
+    if (Math.abs(joyVec.x) > Math.abs(joyVec.z)) dir = joyVec.x > 0 ? 'right' : 'left';
+    else dir = joyVec.z > 0 ? 'down' : 'up';
+  }
+  document.querySelectorAll('#joystickZone .dpad-btn').forEach(btn => {
+    btn.classList.toggle('active-border', btn.dataset.dpad === dir);
+  });
+}
+
+function resetJoystick() {
+  joyPointerId = null;
+  joyVec.x = 0;
+  joyVec.z = 0;
+  setDpadDirection(null);
+}
+
+if (joyZone) {
+  joyZone.addEventListener('pointerdown', e => {
+    initAudio();
+    const dpadBtn = e.target.closest('[data-dpad]');
+    if (dpadBtn) {
+      e.stopPropagation();
+      setDpadDirection(dpadBtn.dataset.dpad);
+      return;
+    }
+    joyPointerId = e.pointerId;
+    if (joyZone.setPointerCapture) joyZone.setPointerCapture(e.pointerId);
+    updateJoystickFromPoint(e.clientX, e.clientY);
+  });
+  joyZone.addEventListener('pointermove', e => {
+    if (joyPointerId !== null && e.pointerId === joyPointerId) {
+      updateJoystickFromPoint(e.clientX, e.clientY);
+    }
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => {
+    joyZone.addEventListener(ev, () => resetJoystick());
+  });
+}
+
+document.querySelectorAll('#joystickZone .dpad-btn').forEach(btn => {
+  btn.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    initAudio();
+    setDpadDirection(btn.dataset.dpad);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => {
+    btn.addEventListener(ev, e => {
+      e.stopPropagation();
+      setDpadDirection(null);
+    });
+  });
+});
+
+if ($('touchJumpBtn')) {
+  $('touchJumpBtn').onclick = () => triggerJump();
+}
+if ($('touchActionBtn')) {
+  $('touchActionBtn').onclick = () => {
+    initAudio();
+    if (nearestNpc && !uiOpen) {
+      tryInteract();
+    } else if (!uiOpen) {
+      // 若尚未靠近老師，點擊按鈕自動走向距離最近的學科老師！
+      let closest = null, bestD = Infinity;
+      for (const n of npcs) {
+        if (!n.obj.visible || !SUBJECTS[n.key]) continue;
+        const d = Math.hypot(player.position.x - n.x, player.position.z - n.z);
+        if (d < bestD) { bestD = d; closest = n; }
+      }
+      if (closest) setAutoWalkTarget(closest.x * 0.85, closest.z * 0.85 + 1.6, closest.key);
+    }
+  };
+}
+
+// 點擊 3D 島嶼地面自動行走 & 點擊 3D 動物老師/建築直接走去上課（Raycaster）
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+let canvasDownPos = null;
+
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (uiOpen) return;
+  canvasDownPos = { x: e.clientX, y: e.clientY };
+});
+
+renderer.domElement.addEventListener('pointerup', e => {
+  if (uiOpen || !canvasDownPos) return;
+  const moveDist = Math.hypot(e.clientX - canvasDownPos.x, e.clientY - canvasDownPos.y);
+  canvasDownPos = null;
+  if (moveDist > 18) return; // 忽略長距離滑動
+
+  initAudio();
+  pointerNDC.x = (e.clientX / innerWidth) * 2 - 1;
+  pointerNDC.y = -(e.clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointerNDC, camera);
+
+  // 1. 檢查是否點到任一學科 NPC 或地標建築
+  for (const n of npcs) {
+    if (!n.obj.visible || !SUBJECTS[n.key]) continue;
+    const lm = LANDMARKS.find(l => l.key === n.key);
+    const targets = lm ? [n.obj, lm.group] : [n.obj];
+    const hits = raycaster.intersectObjects(targets, true);
+    if (hits.length > 0) {
+      const dist = Math.hypot(player.position.x - n.x, player.position.z - n.z);
+      if (dist < 5.2) {
+        nearestNpc = n;
+        tryInteract();
+      } else {
+        setAutoWalkTarget(n.x * 0.85, n.z * 0.85 + 1.6, n.key);
+      }
+      return;
+    }
+  }
+
+  // 2. 檢查是否點到島嶼地面草地/步道/沙灘 -> 自動走過去
+  const groundHits = raycaster.intersectObjects([grass, centerPlaza, beach], false);
+  if (groundHits.length > 0) {
+    const pt = groundHits[0].point;
+    setAutoWalkTarget(pt.x, pt.z, null);
+  }
+});
 
 const camOffset = new THREE.Vector3(0, 9.5, 14);
 const camLook = new THREE.Vector3();
@@ -977,6 +1205,8 @@ function teleportTo(subjKey) {
   const target = npcs.find(n => n.key === subjKey);
   if (!target || !target.obj.visible) return;
   closeAll();
+  autoWalkTarget = null;
+  tapTargetRing.visible = false;
   player.position.set(target.x * 0.82, 0.2, target.z * 0.82 + 2.0);
   player.rotation.y = Math.atan2(target.x - player.position.x, target.z - player.position.z);
   document.querySelectorAll('.tp-btn').forEach(btn => {
@@ -990,10 +1220,37 @@ document.querySelectorAll('.tp-btn').forEach(btn => {
 
 function updatePlayer(dt) {
   let dx = 0, dz = 0;
-  if (keys.KeyW || keys.ArrowUp)    dz -= 1;
-  if (keys.KeyS || keys.ArrowDown)  dz += 1;
-  if (keys.KeyA || keys.ArrowLeft)  dx -= 1;
-  if (keys.KeyD || keys.ArrowRight) dx += 1;
+  if (keys.KeyW || keys.ArrowUp    || activeDpadDir === 'up')    dz -= 1;
+  if (keys.KeyS || keys.ArrowDown  || activeDpadDir === 'down')  dz += 1;
+  if (keys.KeyA || keys.ArrowLeft  || activeDpadDir === 'left')  dx -= 1;
+  if (keys.KeyD || keys.ArrowRight || activeDpadDir === 'right') dx += 1;
+
+  if (joyVec.x !== 0 || joyVec.z !== 0) {
+    dx += joyVec.x;
+    dz += joyVec.z;
+  }
+
+  // 若有平板點擊地面的自動尋路目標
+  if (dx === 0 && dz === 0 && autoWalkTarget) {
+    const tx = autoWalkTarget.x - player.position.x;
+    const tz = autoWalkTarget.z - player.position.z;
+    const dist = Math.hypot(tx, tz);
+    if (dist < 0.65) {
+      const targetNpcKey = autoWalkTarget.npcKey;
+      autoWalkTarget = null;
+      tapTargetRing.visible = false;
+      if (targetNpcKey) {
+        const npcObj = npcs.find(n => n.key === targetNpcKey);
+        if (npcObj && npcObj.obj.visible) {
+          nearestNpc = npcObj;
+          tryInteract();
+        }
+      }
+    } else {
+      dx = tx / dist;
+      dz = tz / dist;
+    }
+  }
 
   const moving = dx !== 0 || dz !== 0;
   if (moving) {
@@ -1040,10 +1297,23 @@ function updatePlayer(dt) {
     if (dist < best) { best = dist; nearestNpc = n; }
   }
   const pEl = $('prompt');
+  const actionBtn = $('touchActionBtn');
+  const actionLabel = $('touchActionLabel');
   if (nearestNpc && !uiOpen) {
-    $('promptName').textContent = `${SUBJECTS[nearestNpc.key].npc}（${SUBJECTS[nearestNpc.key].publisher}）`;
+    const sInfo = SUBJECTS[nearestNpc.key];
+    $('promptName').textContent = `${sInfo.npc}（${sInfo.publisher}）`;
     pEl.classList.remove('hidden');
-  } else pEl.classList.add('hidden');
+    if (actionBtn) {
+      actionBtn.classList.add('active-border');
+      if (actionLabel) actionLabel.textContent = `進入【${sInfo.name}】上課！`;
+    }
+  } else {
+    pEl.classList.add('hidden');
+    if (actionBtn) {
+      actionBtn.classList.remove('active-border');
+      if (actionLabel) actionLabel.textContent = '走向最近老師上課';
+    }
+  }
 }
 
 $('prompt').onclick = () => tryInteract();
@@ -2053,13 +2323,6 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight); resizeCv();
 });
 
-if ('ontouchstart' in window) {
-  $('mobileE').classList.remove('hidden');
-  $('mobileE').onclick = tryInteract;
-  renderer.domElement.addEventListener('touchstart', () => keys.KeyW = true);
-  renderer.domElement.addEventListener('touchend',   () => keys.KeyW = false);
-}
-
 // 初始化角色模型、年級狀態與主迴圈
 rebuildPlayerAvatar(state.avatarId);
 switchGrade(state.grade);
@@ -2070,10 +2333,12 @@ loop();
 window.__island = {
   get state() { return state; },
   get SUBJECTS() { return SUBJECTS; },
+  get autoWalkTarget() { return autoWalkTarget; },
   AVATARS, SHOP, CURRICULUM_ALL, player, npcs,
   loginWithGmail, selectProfile, startEditProfile, cancelEditProfile, deleteProfile, selectAvatarOption, switchGrade,
   openSubjectHub, selectUnitCard, startLesson, startUnitQuiz, startGrandMixQuiz,
-  answer, openNotebook, renderNotebookTab, buyOrEquip, teleportTo
+  answer, openNotebook, renderNotebookTab, buyOrEquip, teleportTo,
+  setDpadDirection, setAutoWalkTarget, triggerJump
 };
 </script>
 </body>
