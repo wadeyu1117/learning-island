@@ -159,19 +159,12 @@
           <!-- Google 帳號選擇器彈出框 -->
           <div id="googleChooserBox" class="hidden bg-[#f8f9fa] rounded-2xl border-3 border-[#4285F4] p-3.5 space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-black text-[#4285F4]">🔵 選擇或輸入您的 Google (Gmail) 帳號</span>
+              <span class="text-xs font-black text-[#4285F4]">🔵 請選擇已登入帳號或輸入 Gmail</span>
               <button type="button" id="closeGoogleChooser" class="text-xs font-bold text-gray-500">✕</button>
             </div>
-            <button type="button" data-gaccount="wadeyu@gmail.com" class="google-acc-item btn w-full p-2 rounded-xl bg-white border-2 border-[#dadce0] flex items-center gap-2.5 text-left hover:bg-blue-50">
-              <span class="w-8 h-8 rounded-full bg-[#4285F4] text-white flex items-center justify-center font-black text-sm">W</span>
-              <div>
-                <div class="text-xs font-black text-gray-800">Wade Yu</div>
-                <div class="text-[11px] font-bold text-gray-500">wadeyu@gmail.com</div>
-              </div>
-              <span class="ml-auto text-xs font-black text-[#4285F4]">一鍵登入 →</span>
-            </button>
+            <div id="savedGoogleAccountsList" class="space-y-1.5"></div>
             <div class="flex gap-1.5 pt-1">
-              <input id="googleCustomMail" type="email" placeholder="或輸入其他 Gmail 直接註冊登入..."
+              <input id="googleCustomMail" type="email" value="" autocomplete="off"
                 class="flex-1 px-2.5 py-1.5 rounded-xl border-2 border-[#dadce0] text-xs font-bold text-gray-800" />
               <button type="button" id="googleCustomConfirmBtn" class="btn px-3 py-1.5 rounded-xl bg-[#4285F4] text-white text-xs font-black">確定</button>
             </div>
@@ -181,10 +174,10 @@
 
           <div class="space-y-2">
             <label class="block text-xs font-black text-[#7a5a3a]">家長 Gmail 信箱：</label>
-            <input id="gmailInput" type="email" placeholder="請輸入您的 Gmail（例如 name@gmail.com）" value="wadeyu@gmail.com"
+            <input id="gmailInput" type="email" value="" autocomplete="off"
               class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630] focus:outline-none focus:border-[#ff8a65]" />
             <label class="block text-xs font-black text-[#7a5a3a]">密碼（首次輸入即自動註冊）：</label>
-            <input id="passInput" type="password" placeholder="請輸入密碼（至少 4 碼）" value="1234"
+            <input id="passInput" type="password" value="" autocomplete="new-password"
               class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630] focus:outline-none focus:border-[#ff8a65]" />
             <div id="authErrorMsg" class="text-xs font-bold text-red-600 hidden"></div>
             <div id="authSuccessToast" class="text-xs font-black text-[#1f7a58] bg-[#d4f5e6] border-2 border-[#3fb98a] rounded-xl p-2 hidden"></div>
@@ -235,7 +228,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label class="block text-xs font-black text-[#7a5a3a] mb-1">1. 小朋友暱稱：</label>
-            <input id="newChildName" type="text" placeholder="例如：小宇、朵朵"
+            <input id="newChildName" type="text" value="" autocomplete="off"
               class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630]" />
           </div>
           <div>
@@ -396,28 +389,21 @@ window.__quickGoogleAuth = function() {
   var chooser = document.getElementById('googleChooserBox');
   if (chooser && chooser.classList.contains('hidden')) {
     chooser.classList.remove('hidden');
+    var cm = document.getElementById('googleCustomMail');
+    if (cm) cm.focus();
     return;
   }
-  var mail = (document.getElementById('gmailInput') && document.getElementById('gmailInput').value) || 'wadeyu@gmail.com';
+  var mail = ((document.getElementById('googleCustomMail') && document.getElementById('googleCustomMail').value) ||
+              (document.getElementById('gmailInput') && document.getElementById('gmailInput').value) || '').trim();
   if (window.__island && window.__island.loginWithGmail) {
     window.__island.loginWithGmail(mail, 'google-oauth');
-  } else {
-    document.getElementById('authSection').classList.add('hidden');
-    var ps = document.getElementById('profileSection');
-    ps.classList.remove('hidden'); ps.classList.add('flex');
-    document.getElementById('loggedParentEmail').textContent = mail;
   }
 };
 window.__submitGmailForm = function() {
-  var mail = (document.getElementById('gmailInput') && document.getElementById('gmailInput').value) || 'wadeyu@gmail.com';
-  var pass = (document.getElementById('passInput') && document.getElementById('passInput').value) || '1234';
+  var mail = ((document.getElementById('gmailInput') && document.getElementById('gmailInput').value) || '').trim();
+  var pass = ((document.getElementById('passInput') && document.getElementById('passInput').value) || '').trim();
   if (window.__island && window.__island.loginWithGmail) {
     window.__island.loginWithGmail(mail, pass);
-  } else {
-    document.getElementById('authSection').classList.add('hidden');
-    var ps = document.getElementById('profileSection');
-    ps.classList.remove('hidden'); ps.classList.add('flex');
-    document.getElementById('loggedParentEmail').textContent = mail;
   }
 };
 </script>
@@ -452,7 +438,7 @@ const $ = id => document.getElementById(id);
 /* =========================================================
  * 2. 家長 Gmail 帳號與兒童多組 Profile 獨立紀錄系統
  * ========================================================= */
-const ACCOUNT_DB_KEY = 'learning-island-accounts-v3';
+const ACCOUNT_DB_KEY = 'learning-island-accounts-v4';
 
 function createDefaultChildProfile(name = '小小冒險家', grade = '5', avatarId = 'fox') {
   return {
@@ -475,44 +461,29 @@ function loadAccountsDB() {
     const raw = localStorage.getItem(ACCOUNT_DB_KEY);
     if (raw) return JSON.parse(raw);
   } catch (e) {}
-  // 預設內建示範帳號並遷移舊版紀錄
-  const oldV2 = JSON.parse(localStorage.getItem('learning-island-v2') || '{}');
-  const starterChild = createDefaultChildProfile('小宇（五年級）', '5', 'fox');
-  if (oldV2.stars) starterChild.stars = oldV2.stars;
-  if (oldV2.lessonsRead) starterChild.lessonsRead = oldV2.lessonsRead;
-  if (oldV2.unitStars) starterChild.unitStars = oldV2.unitStars;
-  if (oldV2.wrongBook) starterChild.wrongBook = oldV2.wrongBook;
-  if (oldV2.owned) starterChild.owned = oldV2.owned;
-  if (oldV2.equipped) starterChild.equipped = oldV2.equipped;
-  if (oldV2.badges) {
-    Object.keys(oldV2.badges).forEach(k => { starterChild.badges['5_' + k] = true; });
-  }
-  const secondChild = createDefaultChildProfile('朵朵（二年級）', '2', 'bunny');
   return {
-    currentEmail: 'wadeyu@gmail.com',
-    accounts: {
-      'wadeyu@gmail.com': {
-        email: 'wadeyu@gmail.com',
-        pass: '1234',
-        activeProfileId: starterChild.id,
-        profiles: [starterChild, secondChild]
-      }
-    }
+    currentEmail: '',
+    accounts: {}
   };
 }
 
 let db = loadAccountsDB();
+let tempGuestAccount = null;
+
 function saveDB() {
   localStorage.setItem(ACCOUNT_DB_KEY, JSON.stringify(db));
 }
 
 function getCurrentAccount() {
-  const email = db.currentEmail || 'wadeyu@gmail.com';
-  if (!db.accounts[email]) {
-    const p = createDefaultChildProfile('小小冒險家', '5', 'fox');
-    db.accounts[email] = { email, pass: '1234', activeProfileId: p.id, profiles: [p] };
+  const email = (db.currentEmail || '').trim();
+  if (email && db.accounts[email]) {
+    return db.accounts[email];
   }
-  return db.accounts[email];
+  if (!tempGuestAccount) {
+    const p = createDefaultChildProfile('小小冒險家', '5', 'fox');
+    tempGuestAccount = { email: '', pass: '', activeProfileId: p.id, profiles: [p] };
+  }
+  return tempGuestAccount;
 }
 
 function getActiveProfile() {
@@ -1334,10 +1305,36 @@ function selectProfile(profileId) {
   updateHUD();
 }
 
-function loginWithGmail(emailStr, passStr = '1234') {
+function renderSavedGoogleAccounts() {
+  const box = $('savedGoogleAccountsList');
+  if (!box) return;
+  box.innerHTML = '';
+  const emails = Object.keys(db.accounts || {}).filter(e => e && e.includes('@'));
+  if (!emails.length) return;
+  emails.forEach(mail => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'google-acc-item btn w-full bg-white rounded-xl border-2 border-[#dadce0] p-2.5 flex items-center gap-3 text-left hover:border-[#4285F4]';
+    const initial = (mail[0] || 'G').toUpperCase();
+    btn.innerHTML = `
+      <div class="w-8 h-8 rounded-full bg-[#4285F4] text-white font-black flex items-center justify-center text-sm">${initial}</div>
+      <div class="flex-1 overflow-hidden">
+        <div class="text-xs font-black text-gray-800 truncate">${mail}</div>
+      </div>
+      <span class="text-xs font-black text-[#4285F4]">一鍵登入 →</span>
+    `;
+    btn.onclick = () => {
+      initAudio(); play('coin');
+      loginWithGmail(mail, 'google-oauth');
+    };
+    box.appendChild(btn);
+  });
+}
+
+function loginWithGmail(emailStr, passStr = '') {
   const cleanEmail = (emailStr || '').trim().toLowerCase();
   if (!cleanEmail || !cleanEmail.includes('@')) {
-    $('authErrorMsg').textContent = '⚠️ 請輸入有效的 Gmail 信箱格式（例如 name@gmail.com）！';
+    $('authErrorMsg').textContent = '⚠️ 請先輸入您的 Gmail 信箱！';
     $('authErrorMsg').classList.remove('hidden');
     return false;
   }
@@ -1348,13 +1345,14 @@ function loginWithGmail(emailStr, passStr = '1234') {
     const firstChild = createDefaultChildProfile('寶貝一號（五年級）', '5', 'fox');
     db.accounts[cleanEmail] = {
       email: cleanEmail,
-      pass: passStr || '1234',
+      pass: passStr || '',
       activeProfileId: firstChild.id,
       profiles: [firstChild]
     };
   }
   state = getActiveProfile();
   saveDB();
+  renderSavedGoogleAccounts();
   rebuildPlayerAvatar(state.avatarId);
   switchGrade(state.grade);
   updateHUD();
@@ -1369,13 +1367,19 @@ function loginWithGmail(emailStr, passStr = '1234') {
 
 window.__quickGoogleAuth = () => {
   initAudio(); play('coin');
+  renderSavedGoogleAccounts();
   const chooser = $('googleChooserBox');
   if (chooser && chooser.classList.contains('hidden')) {
     chooser.classList.remove('hidden');
+    if ($('googleCustomMail')) $('googleCustomMail').focus();
     return;
   }
-  const mail = ($('gmailInput').value || 'wadeyu@gmail.com').trim();
-  loginWithGmail(mail, 'google-oauth');
+  const mail = (($('googleCustomMail') && $('googleCustomMail').value) || $('gmailInput').value || '').trim();
+  if (mail) {
+    loginWithGmail(mail, 'google-oauth');
+  } else if ($('googleCustomMail')) {
+    $('googleCustomMail').focus();
+  }
 };
 
 window.__submitGmailForm = () => {
@@ -1388,18 +1392,21 @@ $('gmailSubmitBtn').onclick = window.__submitGmailForm;
 if ($('closeGoogleChooser')) {
   $('closeGoogleChooser').onclick = () => $('googleChooserBox').classList.add('hidden');
 }
-document.querySelectorAll('.google-acc-item').forEach(btn => {
-  btn.onclick = () => {
-    initAudio(); play('coin');
-    loginWithGmail(btn.dataset.gaccount, 'google-oauth');
-  };
-});
 if ($('googleCustomConfirmBtn')) {
   $('googleCustomConfirmBtn').onclick = () => {
     initAudio(); play('coin');
-    const customMail = ($('googleCustomMail').value || 'wadeyu@gmail.com').trim();
+    const customMail = (($('googleCustomMail') && $('googleCustomMail').value) || '').trim();
     loginWithGmail(customMail, 'google-oauth');
   };
+}
+if ($('googleCustomMail')) {
+  $('googleCustomMail').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const customMail = ($('googleCustomMail').value || '').trim();
+      loginWithGmail(customMail, 'google-oauth');
+    }
+  });
 }
 ['gmailInput', 'passInput'].forEach(id => {
   const el = $(id);
@@ -1934,7 +1941,8 @@ function updateHUD() {
   $('hudAvatarIcon').textContent = av.icon;
   $('hudProfileName').textContent = state.name;
   $('hudGradeBadge').textContent = gCfg.shortName;
-  $('activeParentMail').textContent = `📧 ${getCurrentAccount().email}`;
+  const curMail = getCurrentAccount().email;
+  $('activeParentMail').textContent = curMail ? `📧 ${curMail}` : '';
 
   $('stars').textContent = state.stars || 0;
   $('stars2').textContent = state.stars || 0;
