@@ -49,56 +49,58 @@
 </head>
 <body>
 
-<!-- ===== 左上角：當前兒童 Profile、年級切換、教材版本表按鈕 ===== -->
-<div class="fixed top-4 left-4 z-20 flex flex-wrap items-center gap-2">
-  <button id="profileChipBtn" class="pill px-4 py-2 flex items-center gap-2 text-[#5a4630] font-black text-base hover:bg-[#fff2cc] transition">
-    <span id="hudAvatarIcon" class="text-2xl">🦊</span>
-    <span id="hudProfileName">小小冒險家</span>
-    <span class="px-2.5 py-0.5 rounded-full bg-[#ff8a65] text-white text-xs" id="hudGradeBadge">五年級</span>
-    <span class="text-xs text-[#a08560]">▼ 切換角色</span>
+<!-- ===== 頂部 HUD（左右兩群組共用一個 flex 容器，空間不足時自動換行，絕不重疊） ===== -->
+<div id="topHud" class="fixed top-3 left-3 right-3 z-20 flex flex-wrap items-start justify-between gap-2 pointer-events-none">
+<!-- 左群組：當前兒童 Profile、年級切換、教材版本表按鈕 -->
+<div id="hudLeft" class="flex flex-wrap items-center gap-2 pointer-events-auto max-w-full">
+  <button id="profileChipBtn" class="pill px-3 py-1.5 flex items-center gap-1.5 text-[#5a4630] font-black text-sm hover:bg-[#fff2cc] transition whitespace-nowrap">
+    <span id="hudAvatarIcon" class="text-xl">🦊</span>
+    <span id="hudProfileName" class="max-w-[9rem] truncate">小小冒險家</span>
+    <span class="px-2 py-0.5 rounded-full bg-[#ff8a65] text-white text-xs" id="hudGradeBadge">五年級</span>
+    <span class="text-xs text-[#a08560]">▼</span>
   </button>
 
   <!-- 1~6年級快速切換列 -->
-  <div id="gradeSwitchBar" class="pill px-2.5 py-1.5 flex items-center gap-1 bg-white/90">
-    <span class="text-xs font-black text-[#8c6d46] px-1">年級：</span>
-    <button data-grade="1" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">1年級</button>
-    <button data-grade="2" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">2年級</button>
-    <button data-grade="3" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">3年級</button>
-    <button data-grade="4" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">4年級</button>
-    <button data-grade="5" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">5年級</button>
-    <button data-grade="6" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">6年級</button>
+  <div id="gradeSwitchBar" class="pill px-2 py-1 flex items-center gap-0.5 bg-white/90 whitespace-nowrap">
+    <span class="text-xs font-black text-[#8c6d46] px-1">年級</span>
+    <button data-grade="1" class="grade-tab px-2 py-0.5 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">1</button>
+    <button data-grade="2" class="grade-tab px-2 py-0.5 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">2</button>
+    <button data-grade="3" class="grade-tab px-2 py-0.5 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">3</button>
+    <button data-grade="4" class="grade-tab px-2 py-0.5 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">4</button>
+    <button data-grade="5" class="grade-tab px-2 py-0.5 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">5</button>
+    <button data-grade="6" class="grade-tab px-2 py-0.5 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">6</button>
   </div>
 
-  <button id="pubTableBtn" class="pill btn px-3.5 py-2 font-black text-[#5a4630] text-sm bg-[#e6fbf2] border-[#7ed6b9]">
-    🏫 大豐國小版本表 & 考古題庫
+  <button id="pubTableBtn" class="pill btn px-3 py-1.5 font-black text-[#5a4630] text-xs bg-[#e6fbf2] border-[#7ed6b9] whitespace-nowrap">
+    🏫 版本表＆考古題
   </button>
 </div>
 
-<!-- ===== 右上角：星星、徽章收集進度、知識筆記本、背包商店 ===== -->
-<div class="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
+<!-- 右群組：星星、徽章收集進度、知識筆記本、背包商店 -->
+<div id="hudRight" class="flex flex-col items-end gap-2 pointer-events-auto ml-auto">
   <div class="flex flex-wrap items-center justify-end gap-2">
-    <div class="pill px-4 py-1.5 flex items-center gap-1.5 text-lg font-black text-amber-700">
+    <div class="pill px-3 py-1 flex items-center gap-1 text-base font-black text-amber-700 whitespace-nowrap">
       <span>⭐</span><span id="stars">0</span>
     </div>
-    <button id="noteBtn" class="pill btn px-4 py-1.5 text-base font-black text-[#5a4630] flex items-center gap-1 bg-[#fff4d2]">
-      📘 知識筆記本 & 錯題本
+    <button id="noteBtn" class="pill btn px-3 py-1 text-sm font-black text-[#5a4630] flex items-center gap-1 bg-[#fff4d2] whitespace-nowrap">
+      📘 筆記＆錯題
     </button>
-    <button id="bagBtn" class="pill btn px-4 py-1.5 text-base font-black text-[#7a5a3a] flex items-center gap-1">
-      🎒 背包商店
+    <button id="bagBtn" class="pill btn px-3 py-1 text-sm font-black text-[#7a5a3a] flex items-center gap-1 whitespace-nowrap">
+      🎒 背包
     </button>
-    <button id="muteBtn" class="pill btn px-3.5 py-1.5 text-base font-bold text-[#7a5a3a]">🎵 音樂：開</button>
+    <button id="muteBtn" class="pill btn px-3 py-1 text-sm font-bold text-[#7a5a3a] whitespace-nowrap">🎵 音樂：開</button>
   </div>
 
   <!-- 5 大科目徽章進度 -->
-  <div class="card px-4 py-2.5 w-80">
-    <div class="flex justify-between items-center text-xs font-bold text-[#7a5a3a] mb-1">
-      <span>🏅 本年級領域徽章 (<span id="badgeCount">0</span>/<span id="badgeTotal">5</span>)</span>
-      <span>📚 已讀 <span id="lessonStat">0/0</span>｜⭐ 通關 <span id="unitStat">0/0</span></span>
+  <div class="card px-3 py-2 w-64">
+    <div class="flex justify-between items-center text-[11px] font-bold text-[#7a5a3a] mb-1 whitespace-nowrap">
+      <span>🏅 徽章 (<span id="badgeCount">0</span>/<span id="badgeTotal">5</span>)</span>
+      <span>📚 <span id="lessonStat">0/0</span>｜⭐ <span id="unitStat">0/0</span></span>
     </div>
-    <div class="w-full h-3 bg-[#ead9b5] rounded-full overflow-hidden mb-2">
+    <div class="w-full h-2.5 bg-[#ead9b5] rounded-full overflow-hidden mb-1.5">
       <div id="badgeBar" class="h-full bg-gradient-to-r from-[#5fd3a6] to-[#ff8a65] transition-all duration-500" style="width:0%"></div>
     </div>
-    <div id="badgeIconsRow" class="flex justify-around text-xl">
+    <div id="badgeIconsRow" class="flex justify-around text-lg">
       <div data-badge="chinese" class="badge" title="國語營地徽章">📖</div>
       <div data-badge="math"    class="badge" title="數學工坊徽章">📐</div>
       <div data-badge="english" class="badge" title="英語村徽章">🔤</div>
@@ -106,6 +108,7 @@
       <div data-badge="social"  class="badge" title="社會歷史館徽章">🏯</div>
     </div>
   </div>
+</div>
 </div>
 
 <!-- ===== 左下角：操作指引 + 5 大地標快速傳送門 ===== -->
