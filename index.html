@@ -160,87 +160,19 @@
   </div>
 </div>
 
-<!-- ===== 1. Gmail 家長登入 & 兒童多組 Profile 選擇彈窗（支援 8 種 3D 角色） ===== -->
+<!-- ===== 1. 兒童多組學習檔案（Profile）選擇與管理視窗（本機自動儲存・支援 8 種 3D 角色） ===== -->
 <div id="authProfileModal" class="fixed inset-0 bg-[#56a8dc]/85 flex items-center justify-center z-40 p-4 overflow-y-auto">
   <div class="card pop w-full max-w-4xl p-6 md:p-8 max-h-[94vh] flex flex-col">
-    <!-- 步驟 A：Gmail 登入 / 註冊區塊 -->
-    <div id="authSection" class="space-y-4">
-      <div class="text-center">
-        <div class="text-5xl mb-1">🏝️</div>
-        <h1 class="text-2xl md:text-3xl font-black text-[#5a4630]">歡迎來到大豐國小 1～6 年級 3D 知識小島！</h1>
-        <p class="text-sm md:text-base text-[#8c6d46] font-bold mt-1">
-          請使用家長的 <b>Gmail 帳號登入或註冊</b>，即可為家中不同年級的小孩建立專屬角色與獨立學習紀錄！
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-        <!-- 左欄：Google 一鍵快速登入 + Gmail 帳密表單 -->
-        <div class="bg-white rounded-3xl border-4 border-[#eadfbf] p-5 space-y-3">
-          <div class="font-black text-lg text-[#5a4630] flex items-center gap-2">
-            <span>📧 Gmail 家長帳號登入 / 註冊</span>
-          </div>
-
-          <button id="googleQuickBtn" type="button" onclick="window.__quickGoogleAuth && window.__quickGoogleAuth()" class="btn w-full py-2.5 px-4 rounded-2xl bg-[#4285F4] text-white font-black text-base flex items-center justify-center gap-2 cursor-pointer">
-            <span class="bg-white text-[#4285F4] rounded-full w-6 h-6 inline-flex items-center justify-center font-black">G</span>
-            使用 Google (Gmail) 帳號一鍵快速登入 / 註冊
-          </button>
-
-          <!-- Google 帳號選擇器彈出框 -->
-          <div id="googleChooserBox" class="hidden bg-[#f8f9fa] rounded-2xl border-3 border-[#4285F4] p-3.5 space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-black text-[#4285F4]">🔵 請選擇已登入帳號或輸入 Gmail</span>
-              <button type="button" id="closeGoogleChooser" class="text-xs font-bold text-gray-500">✕</button>
-            </div>
-            <div id="savedGoogleAccountsList" class="space-y-1.5"></div>
-            <div class="flex gap-1.5 pt-1">
-              <input id="googleCustomMail" type="email" value="" autocomplete="off"
-                class="flex-1 px-2.5 py-1.5 rounded-xl border-2 border-[#dadce0] text-xs font-bold text-gray-800" />
-              <button type="button" id="googleCustomConfirmBtn" class="btn px-3 py-1.5 rounded-xl bg-[#4285F4] text-white text-xs font-black">確定</button>
-            </div>
-          </div>
-
-          <div class="text-center text-xs font-bold text-[#a08560]">—— 或於下方輸入 Gmail 註冊／登入 ——</div>
-
-          <div class="space-y-2">
-            <label class="block text-xs font-black text-[#7a5a3a]">家長 Gmail 信箱：</label>
-            <input id="gmailInput" type="email" value="" autocomplete="off"
-              class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630] focus:outline-none focus:border-[#ff8a65]" />
-            <label class="block text-xs font-black text-[#7a5a3a]">密碼（首次輸入即自動註冊）：</label>
-            <input id="passInput" type="password" value="" autocomplete="new-password"
-              class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630] focus:outline-none focus:border-[#ff8a65]" />
-            <div id="authErrorMsg" class="text-xs font-bold text-red-600 hidden"></div>
-            <div id="authSuccessToast" class="text-xs font-black text-[#1f7a58] bg-[#d4f5e6] border-2 border-[#3fb98a] rounded-xl p-2 hidden"></div>
-            <button id="gmailSubmitBtn" type="button" onclick="window.__submitGmailForm && window.__submitGmailForm()" class="btn w-full py-2.5 rounded-2xl bg-[#ff8a65] text-white font-black text-base mt-1 cursor-pointer">
-              登入 / 註冊並進入孩子角色選擇 →
-            </button>
-          </div>
-        </div>
-
-        <!-- 右欄：大豐國小 115 學年度教材特色一覽 -->
-        <div class="bg-[#fff8e6] rounded-3xl border-4 border-[#eadfbf] p-5 flex flex-col justify-between space-y-3">
-          <div class="space-y-2">
-            <div class="font-black text-lg text-[#7a5a3a]">🌟 1～6 年級全版本教材＆功能亮點</div>
-            <ul class="text-sm text-[#6e563a] font-bold space-y-1.5 leading-6">
-              <li>✅ <b>對齊大豐國小 115 學年度版本表</b>：完整涵蓋 <b>康軒、南一、翰林(含 Twinkle)、何嘉仁(SuperFun)</b> 各年級指定版本！</li>
-              <li>✅ <b>米蘭老師考古題庫整合</b>：收錄 <b>98 個單元、294 張教學卡、643 道精選題目</b>，並可一鍵開啟各年級期中/期末段考卷雲端庫！</li>
-              <li>✅ <b>8 種 3D 動物角色＆多孩童獨立檔案</b>：每個孩子擁有專屬 3D 角色外觀、年級設定、星星徽章與錯題本！</li>
-            </ul>
-          </div>
-          <div class="text-xs text-[#8c6d46] bg-white/80 rounded-2xl p-3 border-2 border-[#eadfbf]">
-            💡 <b>跨裝置雲端同步支援</b>：預設自動保存於瀏覽器本機資料庫，家長亦可於下方設定 Firebase 金鑰開啟跨手機/平板即時同步。
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 步驟 B：登入後的「小孩 Profile 選擇與新增」畫面 -->
-    <div id="profileSection" class="hidden flex-col space-y-4 overflow-y-auto pr-1">
+    <!-- 兒童 Profile 選擇與新增/修改/刪除畫面 -->
+    <div id="profileSection" class="flex flex-col space-y-4 overflow-y-auto pr-1">
       <div class="flex flex-wrap items-center justify-between gap-2 border-b-3 border-[#eadfbf] pb-3">
         <div>
-          <div class="text-xs font-black text-[#a08560]">👨‍👩‍👧‍👦 家長帳號：<span id="loggedParentEmail" class="text-[#c94a29]"></span></div>
-          <h2 class="text-2xl font-black text-[#5a4630]">請選擇今天要登島學習的小朋友檔案（Profile）</h2>
+          <div class="text-xs font-black text-[#1f7a58]">💾 本機自動儲存模式（免註冊・免登入・紀錄直接保存在此裝置）</div>
+          <h2 class="text-2xl font-black text-[#5a4630]">🏝️ 歡迎來到大豐國小 1～6 年級知識小島！請選擇小朋友檔案</h2>
         </div>
-        <button id="logoutBtn" class="btn px-3.5 py-1.5 rounded-xl bg-[#eadfbf] text-[#7a5a3a] font-black text-xs">切換 Gmail 帳號</button>
+        <button id="topEnterIslandBtn" type="button" class="btn px-4 py-2 rounded-xl bg-[#ff8a65] text-white font-black text-sm">
+          🚀 立即登島開始學習 →
+        </button>
       </div>
 
       <!-- 現有小孩 Profile 卡片列表 -->
@@ -397,45 +329,39 @@
   </div>
 </div>
 
-<!-- ===== 5. 背包與星星商店 ===== -->
+<!-- ===== 5. 背包與星星商店（24 種 3D 穿戴道具與島嶼景觀！） ===== -->
 <div id="bagModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-30 p-4">
-  <div class="card pop w-full max-w-lg p-6">
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-2xl font-black text-[#7a5a3a]">🎒 星星兌換背包（角色專屬）</div>
-      <div class="ml-auto pill px-4 py-1 font-black text-amber-700">⭐ <span id="stars2">0</span></div>
+  <div class="card pop w-full max-w-4xl p-6 max-h-[90vh] flex flex-col">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3 shrink-0">
+      <div>
+        <div class="text-2xl font-black text-[#7a5a3a]">🎒 星星兌換背包＆3D 造型商店（共 24 種道具）</div>
+        <div class="text-[#a08560] font-bold text-xs md:text-sm">每個小朋友的星星與道具獨立儲存在本機！可同時穿戴「頭飾＋背飾＋手部道具＋腳步光環」並佈置島嶼景觀！</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="pill px-4 py-1.5 font-black text-amber-700 text-lg">⭐ <span id="stars2">0</span></div>
+        <button id="closeBag" class="btn bg-[#f3e3c3] text-[#7a5a3a] font-black w-10 h-10 rounded-full text-lg">✕</button>
+      </div>
     </div>
-    <div class="text-[#a08560] mb-3 font-bold text-sm">每個小朋友的星星與配件各自獨立保存！點選已擁有的頭飾即可穿戴在 3D 動物角色頭上。</div>
-    <div id="shop" class="grid grid-cols-2 gap-3"></div>
-    <div class="flex justify-end mt-4"><button id="closeBag" class="btn px-5 py-2 rounded-2xl bg-[#7ed6b9] text-white font-black text-lg">關閉</button></div>
+
+    <!-- 背包道具分類篩選列 -->
+    <div id="shopFilterTabs" class="flex flex-wrap gap-2 mb-3 shrink-0">
+      <button data-scat="all"   class="shop-cat-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-sm text-[#5a4630]">🌟 全部道具 (24)</button>
+      <button data-scat="hat"   class="shop-cat-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-sm text-[#5a4630]">🎩 3D 頭飾 (8)</button>
+      <button data-scat="back"  class="shop-cat-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-sm text-[#5a4630]">🪽 3D 背飾翅膀 (5)</button>
+      <button data-scat="hand"  class="shop-cat-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-sm text-[#5a4630]">🪄 3D 手持法寶 (5)</button>
+      <button data-scat="trail" class="shop-cat-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-sm text-[#5a4630]">✨ 腳步光環 (3)</button>
+      <button data-scat="deco"  class="shop-cat-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-sm text-[#5a4630]">🎡 島嶼景觀建築 (3)</button>
+    </div>
+
+    <div id="shop" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto pr-1 flex-1"></div>
+
+    <div class="flex justify-end mt-4 pt-2 border-t-2 border-[#f0e2c4] shrink-0">
+      <button id="closeBagBottom" class="btn px-6 py-2 rounded-2xl bg-[#7ed6b9] text-white font-black text-base">完成穿搭並返回島嶼</button>
+    </div>
   </div>
 </div>
 
 <canvas id="confetti" class="fixed inset-0 pointer-events-none z-50"></canvas>
-
-<!-- 保底互動腳本：即使 CDN 載入較慢，Gmail 快速註冊與登入也能立即反應！ -->
-<script>
-window.__quickGoogleAuth = function() {
-  var chooser = document.getElementById('googleChooserBox');
-  if (chooser && chooser.classList.contains('hidden')) {
-    chooser.classList.remove('hidden');
-    var cm = document.getElementById('googleCustomMail');
-    if (cm) cm.focus();
-    return;
-  }
-  var mail = ((document.getElementById('googleCustomMail') && document.getElementById('googleCustomMail').value) ||
-              (document.getElementById('gmailInput') && document.getElementById('gmailInput').value) || '').trim();
-  if (window.__island && window.__island.loginWithGmail) {
-    window.__island.loginWithGmail(mail, 'google-oauth');
-  }
-};
-window.__submitGmailForm = function() {
-  var mail = ((document.getElementById('gmailInput') && document.getElementById('gmailInput').value) || '').trim();
-  var pass = ((document.getElementById('passInput') && document.getElementById('passInput').value) || '').trim();
-  if (window.__island && window.__island.loginWithGmail) {
-    window.__island.loginWithGmail(mail, pass);
-  }
-};
-</script>
 
 <script type="module">
 import * as THREE from 'three';
@@ -456,18 +382,48 @@ const AVATARS = [
 ];
 
 const SHOP = [
-  { id:'leaf',   name:'嫩葉學童頭飾', icon:'🌱', cost:4,  type:'hat' },
-  { id:'straw',  name:'草編冒險帽',   icon:'👒', cost:8,  type:'hat' },
-  { id:'crown',  name:'金榜學霸皇冠', icon:'👑', cost:20, type:'hat' },
-  { id:'seeds',  name:'彩虹花圃種子', icon:'🌷', cost:12, type:'deco' },
+  // 🎩 1. 頭飾系列（8種）
+  { id:'leaf',        name:'嫩葉學童頭飾',   icon:'🌱', cost:4,  type:'hat',   desc:'頭頂長出充滿朝氣的嫩綠小樹芽' },
+  { id:'straw',       name:'草編冒險帽',     icon:'👒', cost:6,  type:'hat',   desc:'夏日海島探險必備的紅帶草編帽' },
+  { id:'beret',       name:'畫家貝雷帽',     icon:'🎨', cost:8,  type:'hat',   desc:'戴上立刻充滿藝術氣息的玫瑰紅畫家帽' },
+  { id:'detective',   name:'名偵探推理帽',   icon:'🕵️', cost:10, type:'hat',   desc:'解開數學與自然謎題的福爾摩斯獵鹿帽' },
+  { id:'chef',        name:'甜點主廚高帽',   icon:'👨‍🍳', cost:10, type:'hat',   desc:'蓬鬆潔白的米其林五星甜點師高帽' },
+  { id:'gradcap',     name:'小學士方帽',     icon:'🎓', cost:12, type:'hat',   desc:'象徵知識淵博的金色流蘇學士方帽' },
+  { id:'wizard',      name:'星月魔法師尖帽', icon:'🧙', cost:15, type:'hat',   desc:'鑲嵌金星環的神秘紫藍大法師尖帽' },
+  { id:'crown',       name:'金榜學霸皇冠',   icon:'👑', cost:20, type:'hat',   desc:'鑲滿紅寶石與鑽石的純金榮耀皇冠' },
+
+  // 🪽 2. 背飾翅膀系列（5種）
+  { id:'satchel',     name:'紅星小學生書包', icon:'🎒', cost:6,  type:'back',  desc:'裝滿課本與滿分考卷的經典紅書包' },
+  { id:'cape',        name:'超人英雄紅披風', icon:'🦸', cost:10, type:'back',  desc:'隨風帥氣飄揚的正義紅披風' },
+  { id:'angel_wings', name:'純白天使羽翼',   icon:'🪽', cost:14, type:'back',  desc:'背後展開聖潔輕盈的純白雙翼' },
+  { id:'fairy_wings', name:'幻彩精靈蝶翼',   icon:'🦋', cost:16, type:'back',  desc:'閃耀粉紫光芒的森林精靈蝴蝶翅膀' },
+  { id:'jetpack',     name:'太空火箭噴射包', icon:'🚀', cost:18, type:'back',  desc:'雙管齊發、尾部閃耀橘紅火焰的噴射背包' },
+
+  // 🪄 3. 手持法寶系列（5種）
+  { id:'pencil',      name:'滿分黃金巨鉛筆', icon:'✏️', cost:6,  type:'hand',  desc:'握在手中寫考卷百發百中的神仙大鉛筆' },
+  { id:'magnifier',   name:'科學探索放大鏡', icon:'🔍', cost:8,  type:'hand',  desc:'觀察昆蟲與自然奧秘的黃銅放大鏡' },
+  { id:'wand',        name:'星光閃耀魔法杖', icon:'🪄', cost:12, type:'hand',  desc:'頂端懸浮立體五角金星的奇幻魔法杖' },
+  { id:'balloon',     name:'漂浮紅愛心氣球', icon:'🎈', cost:10, type:'hand',  desc:'牽在手心高高飄浮的立體紅氣球' },
+  { id:'shield',      name:'勇者聖光盾牌',   icon:'🛡️', cost:15, type:'hand',  desc:'鑲有黃金十字紋章的皇家騎士盾牌' },
+
+  // ✨ 4. 腳步光環系列（3種）
+  { id:'aura_star',    name:'黃金星辰光環',  icon:'🌟', cost:12, type:'trail', desc:'腳下環繞璀璨旋轉的黃金星辰魔法陣' },
+  { id:'aura_rainbow', name:'彩虹踏雲光環',  icon:'🌈', cost:16, type:'trail', desc:'每一步都綻放七彩霓虹光圈' },
+  { id:'aura_flame',   name:'烈焰戰神光環',  icon:'🔥', cost:18, type:'trail', desc:'腳底燃起琥珀色能量光焰' },
+
+  // 🎡 5. 島嶼景觀建築系列（3種）
+  { id:'seeds',        name:'中央廣場彩虹花海', icon:'🌷', cost:12, type:'deco', desc:'在中央廣場種滿 24 朵繽紛盛開的彩虹花朵' },
+  { id:'fountain',     name:'許願噴泉水池',     icon:'⛲', cost:18, type:'deco', desc:'在廣場中央建造雙層白玉湧泉水池' },
+  { id:'windmill',     name:'荷蘭微風大風車',   icon:'🎡', cost:22, type:'deco', desc:'在島嶼山丘建造一座葉片隨風旋轉的巨型風車' },
 ];
 
 const $ = id => document.getElementById(id);
 
 /* =========================================================
- * 2. 家長 Gmail 帳號與兒童多組 Profile 獨立紀錄系統
+ * 2. 本機多組兒童學習檔案（Local Profile System）
+ *    免註冊、免登入，所有紀錄直接安全儲存在本機 localStorage！
  * ========================================================= */
-const ACCOUNT_DB_KEY = 'learning-island-accounts-v4';
+const LOCAL_DB_KEY = 'learning-island-local-profiles-v5';
 
 function createDefaultChildProfile(name = '小小冒險家', grade = '5', avatarId = 'fox') {
   return {
@@ -478,52 +434,74 @@ function createDefaultChildProfile(name = '小小冒險家', grade = '5', avatar
     stars: 0,
     badges: {},       // { "5_chinese": true, ... }
     owned: {},        // { leaf: true, ... }
-    equipped: null,
+    equipped: null,   // hat id (向下相容)
+    equippedSlots: { hat: null, back: null, hand: null, trail: null },
     lessonsRead: {},  // { [unitId]: true }
     unitStars: {},    // { [unitId]: 1|2|3 }
     wrongBook: []     // [{ grade, subj, unitId, unitTitle, q, o, a, hint, explain }]
   };
 }
 
-function loadAccountsDB() {
+function ensureProfileSlots(p) {
+  if (!p.equippedSlots) {
+    p.equippedSlots = { hat: p.equipped || null, back: null, hand: null, trail: null };
+  }
+  if (p.equipped && !p.equippedSlots.hat) {
+    p.equippedSlots.hat = p.equipped;
+  }
+  return p;
+}
+
+function loadLocalDB() {
   try {
-    const raw = localStorage.getItem(ACCOUNT_DB_KEY);
-    if (raw) return JSON.parse(raw);
+    const raw = localStorage.getItem(LOCAL_DB_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.profiles) && parsed.profiles.length > 0) {
+        parsed.profiles.forEach(ensureProfileSlots);
+        return parsed;
+      }
+    }
+    // 遷移舊版 v4 / v3 內的學習檔案，不遺失任何小朋友紀錄
+    for (const oldKey of ['learning-island-accounts-v4', 'learning-island-accounts-v3']) {
+      const oldRaw = localStorage.getItem(oldKey);
+      if (oldRaw) {
+        const oldDb = JSON.parse(oldRaw);
+        const migrated = [];
+        Object.values(oldDb.accounts || {}).forEach(acc => {
+          (acc.profiles || []).forEach(pr => migrated.push(ensureProfileSlots(pr)));
+        });
+        if (migrated.length > 0) {
+          return { activeProfileId: migrated[0].id, profiles: migrated };
+        }
+      }
+    }
   } catch (e) {}
+  const firstChild = createDefaultChildProfile('小小冒險家', '5', 'fox');
   return {
-    currentEmail: '',
-    accounts: {}
+    activeProfileId: firstChild.id,
+    profiles: [firstChild]
   };
 }
 
-let db = loadAccountsDB();
-let tempGuestAccount = null;
+let db = loadLocalDB();
 
 function saveDB() {
-  localStorage.setItem(ACCOUNT_DB_KEY, JSON.stringify(db));
+  localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(db));
 }
 
 function getCurrentAccount() {
-  const email = (db.currentEmail || '').trim();
-  if (email && db.accounts[email]) {
-    return db.accounts[email];
-  }
-  if (!tempGuestAccount) {
-    const p = createDefaultChildProfile('小小冒險家', '5', 'fox');
-    tempGuestAccount = { email: '', pass: '', activeProfileId: p.id, profiles: [p] };
-  }
-  return tempGuestAccount;
+  return db;
 }
 
 function getActiveProfile() {
-  const acc = getCurrentAccount();
-  let p = acc.profiles.find(x => x.id === acc.activeProfileId);
+  let p = db.profiles.find(x => x.id === db.activeProfileId);
   if (!p) {
-    p = acc.profiles[0] || createDefaultChildProfile('小小冒險家', '5', 'fox');
-    if (!acc.profiles.length) acc.profiles.push(p);
-    acc.activeProfileId = p.id;
+    p = db.profiles[0] || createDefaultChildProfile('小小冒險家', '5', 'fox');
+    if (!db.profiles.length) db.profiles.push(p);
+    db.activeProfileId = p.id;
   }
-  return p;
+  return ensureProfileSlots(p);
 }
 
 // 讓現有邏輯無縫讀寫當前兒童的 Profile 狀態
@@ -821,6 +799,55 @@ function buildBonusFlowers() {
   }
 }
 
+let bonusFountainBuilt = false;
+function buildBonusFountain() {
+  if (bonusFountainBuilt) return; bonusFountainBuilt = true;
+  const fg = new THREE.Group();
+  const pool = mesh(new THREE.CylinderGeometry(2.6, 2.8, 0.5, 20), 0xf5f5f5);
+  pool.position.y = 0.25; fg.add(pool);
+  const water = mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.45, 20), 0x4fc3f7, false);
+  water.position.y = 0.32; fg.add(water);
+  const pillar = mesh(new THREE.CylinderGeometry(0.45, 0.65, 1.8, 12), 0xeeeeee);
+  pillar.position.y = 1.1; fg.add(pillar);
+  const topBowl = mesh(new THREE.CylinderGeometry(1.2, 0.5, 0.35, 16), 0xffffff);
+  topBowl.position.y = 2.0; fg.add(topBowl);
+  constspout = mesh(new THREE.SphereGeometry(0.45, 10, 10), 0x81d4fa, false);
+  constspout.position.y = 2.45; fg.add(constspout);
+  fg.position.set(0, 0.25, -5.5);
+  scene.add(fg);
+  addCollider(0, -5.5, 2.7);
+}
+
+let bonusWindmillBuilt = false;
+let windmillBlades = null;
+function buildBonusWindmill() {
+  if (bonusWindmillBuilt) return; bonusWindmillBuilt = true;
+  const wg = new THREE.Group();
+  const tower = mesh(new THREE.CylinderGeometry(1.4, 2.2, 6.2, 12), 0xd7ccc8);
+  tower.position.y = 3.1; wg.add(tower);
+  const roof = mesh(new THREE.ConeGeometry(1.9, 1.8, 12), 0x8d6e63);
+  roof.position.y = 7.0; wg.add(roof);
+  const hub = new THREE.Group();
+  hub.position.set(0, 5.2, 1.55);
+  for (let i = 0; i < 4; i++) {
+    const blade = mesh(new THREE.BoxGeometry(0.45, 4.6, 0.12), 0xfff8e1);
+    blade.rotation.z = (i * Math.PI) / 2;
+    hub.add(blade);
+  }
+  windmillBlades = hub;
+  wg.add(hub);
+  wg.position.set(-12, 0.2, -5);
+  scene.add(wg);
+  addCollider(-12, -5, 2.4);
+}
+
+function syncIslandDecorations() {
+  if (!state.owned) return;
+  if (state.owned.seeds) buildBonusFlowers();
+  if (state.owned.fountain) buildBonusFountain();
+  if (state.owned.windmill) buildBonusWindmill();
+}
+
 const clouds = [];
 for (let i = 0; i < 8; i++) {
   const cg = new THREE.Group();
@@ -869,8 +896,10 @@ const player = new THREE.Group();
 player.position.set(0, 0.2, 4);
 scene.add(player);
 
-const hatSlot = new THREE.Group();
-hatSlot.position.y = 2.62;
+const hatSlot   = new THREE.Group(); hatSlot.position.y = 2.62;
+const backSlot  = new THREE.Group(); backSlot.position.set(0, 1.05, -0.58);
+const handSlot  = new THREE.Group(); handSlot.position.set(0.75, 1.05, 0.35);
+const trailSlot = new THREE.Group(); trailSlot.position.set(0, 0.06, 0);
 
 function rebuildPlayerAvatar(avatarId = state.avatarId) {
   const spec = AVATARS.find(a => a.id === avatarId) || AVATARS[0];
@@ -960,26 +989,173 @@ function rebuildPlayerAvatar(avatarId = state.avatarId) {
     tail.position.set(0, 0.55, -0.68); player.add(tail);
   }
 
-  player.add(hatSlot);
-  applyHat();
+  player.add(hatSlot, backSlot, handSlot, trailSlot);
+  applyEquipment();
 }
 
-function applyHat() {
+function applyEquipment() {
+  ensureProfileSlots(state);
+  const slots = state.equippedSlots;
   hatSlot.clear();
-  if (state.equipped === 'leaf') {
+  backSlot.clear();
+  handSlot.clear();
+  trailSlot.clear();
+
+  // 1. 頭飾 (8種)
+  const hatId = slots.hat;
+  if (hatId === 'leaf') {
     const stem = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 6), 0x4caf50);
     const leaf = mesh(new THREE.SphereGeometry(0.22, 8, 6), 0x66bb6a);
     leaf.scale.set(1.4, 0.4, 0.8); leaf.position.set(0.18, 0.2, 0);
     hatSlot.add(stem, leaf);
-  } else if (state.equipped === 'straw') {
+  } else if (hatId === 'straw') {
     const brim = mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.1, 14), 0xf5d77f);
     const top  = mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.4, 14), 0xf5d77f);
-    top.position.y = 0.22; hatSlot.add(brim, top);
-  } else if (state.equipped === 'crown') {
-    const c = mesh(new THREE.CylinderGeometry(0.5, 0.42, 0.42, 6), 0xffd700);
-    c.position.y = 0.15; hatSlot.add(c);
+    const band = mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.1, 14), 0xe53935);
+    top.position.y = 0.22; band.position.y = 0.1;
+    hatSlot.add(brim, top, band);
+  } else if (hatId === 'beret') {
+    const b = mesh(new THREE.SphereGeometry(0.55, 12, 10), 0xd81b60);
+    b.scale.set(1.15, 0.45, 1.15); b.position.set(0.08, 0.12, 0);
+    const tip = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.18, 6), 0x880e4f);
+    tip.position.set(0.08, 0.32, 0);
+    hatSlot.add(b, tip);
+  } else if (hatId === 'detective') {
+    const cap = mesh(new THREE.SphereGeometry(0.54, 12, 10), 0x8d6e63);
+    cap.scale.set(1.0, 0.65, 1.25); cap.position.y = 0.12;
+    const visor = mesh(new THREE.BoxGeometry(0.7, 0.08, 0.95), 0x6d4c41);
+    visor.position.set(0, 0.04, 0);
+    hatSlot.add(cap, visor);
+  } else if (hatId === 'chef') {
+    const base = mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.35, 12), 0xffffff);
+    base.position.y = 0.15;
+    const puff = mesh(new THREE.SphereGeometry(0.56, 12, 10), 0xffffff);
+    puff.scale.set(1.1, 0.75, 1.1); puff.position.y = 0.48;
+    hatSlot.add(base, puff);
+  } else if (hatId === 'gradcap') {
+    const skull = mesh(new THREE.CylinderGeometry(0.45, 0.48, 0.22, 10), 0x263238);
+    skull.position.y = 0.1;
+    const board = mesh(new THREE.BoxGeometry(1.15, 0.08, 1.15), 0x263238);
+    board.position.y = 0.24;
+    const tassel = mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.42, 6), 0xffca28);
+    tassel.position.set(0.48, 0.08, 0.48);
+    hatSlot.add(skull, board, tassel);
+  } else if (hatId === 'wizard') {
+    const brim = mesh(new THREE.CylinderGeometry(0.92, 0.92, 0.08, 14), 0x4527a0);
+    const cone = mesh(new THREE.ConeGeometry(0.52, 1.15, 12), 0x5e35b1);
+    cone.position.y = 0.58;
+    const ring = mesh(new THREE.CylinderGeometry(0.48, 0.52, 0.12, 12), 0xffd54f);
+    ring.position.y = 0.12;
+    hatSlot.add(brim, cone, ring);
+  } else if (hatId === 'crown') {
+    const c = mesh(new THREE.CylinderGeometry(0.52, 0.42, 0.44, 8), 0xffd700);
+    c.position.y = 0.18;
+    const gem = mesh(new THREE.SphereGeometry(0.12, 8, 8), 0xe53935);
+    gem.position.set(0, 0.2, 0.46);
+    hatSlot.add(c, gem);
+  }
+
+  // 2. 背飾翅膀 (5種)
+  const backId = slots.back;
+  if (backId === 'satchel') {
+    const bag = mesh(new THREE.BoxGeometry(0.68, 0.72, 0.36), 0xd32f2f);
+    const flap = mesh(new THREE.BoxGeometry(0.7, 0.32, 0.38), 0xb71c1c);
+    flap.position.y = 0.18;
+    backSlot.add(bag, flap);
+  } else if (backId === 'cape') {
+    const cape = mesh(new THREE.BoxGeometry(1.1, 1.25, 0.08), 0xe53935);
+    cape.position.set(0, -0.15, -0.1);
+    cape.rotation.x = 0.22;
+    backSlot.add(cape);
+  } else if (backId === 'angel_wings') {
+    [-0.55, 0.55].forEach((x, idx) => {
+      const w = mesh(new THREE.BoxGeometry(0.85, 0.55, 0.1), 0xffffff);
+      w.position.set(x, 0.2, 0);
+      w.rotation.z = idx === 0 ? 0.35 : -0.35;
+      backSlot.add(w);
+    });
+  } else if (backId === 'fairy_wings') {
+    [-0.55, 0.55].forEach((x, idx) => {
+      const topW = mesh(new THREE.SphereGeometry(0.45, 10, 8), 0xf48fb1);
+      topW.scale.set(1.2, 0.7, 0.2);
+      topW.position.set(x, 0.32, 0);
+      topW.rotation.z = idx === 0 ? 0.4 : -0.4;
+      const botW = mesh(new THREE.SphereGeometry(0.32, 10, 8), 0xce93d8);
+      botW.scale.set(1.1, 0.65, 0.2);
+      botW.position.set(x * 0.85, -0.1, 0);
+      backSlot.add(topW, botW);
+    });
+  } else if (backId === 'jetpack') {
+    [-0.24, 0.24].forEach(x => {
+      const cyl = mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.78, 10), 0x90a4ae);
+      cyl.position.set(x, 0, 0);
+      const fire = mesh(new THREE.ConeGeometry(0.14, 0.38, 8), 0xff6d00, false);
+      fire.position.set(x, -0.52, 0);
+      fire.rotation.x = Math.PI;
+      backSlot.add(cyl, fire);
+    });
+  }
+
+  // 3. 手持法寶 (5種)
+  const handId = slots.hand;
+  if (handId === 'pencil') {
+    const shaft = mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.1, 8), 0xffca28);
+    const tip = mesh(new THREE.ConeGeometry(0.08, 0.25, 8), 0xffe0b2);
+    tip.position.y = 0.67;
+    handSlot.add(shaft, tip);
+  } else if (handId === 'magnifier') {
+    const handle = mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.55, 8), 0x5d4037);
+    const rim = mesh(new THREE.TorusGeometry(0.28, 0.05, 8, 16), 0xffb300);
+    rim.position.y = 0.52;
+    const glass = mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.04, 14), 0x81d4fa, false);
+    glass.rotation.x = Math.PI / 2; glass.position.y = 0.52;
+    handSlot.add(handle, rim, glass);
+  } else if (handId === 'wand') {
+    const rod = mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.85, 8), 0xf48fb1);
+    const star = mesh(new THREE.OctahedronGeometry(0.22, 0), 0xffeb3b, false);
+    star.position.y = 0.55;
+    handSlot.add(rod, star);
+  } else if (handId === 'balloon') {
+    const string = mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.2, 6), 0xffffff, false);
+    string.position.y = 0.6;
+    const bal = mesh(new THREE.SphereGeometry(0.38, 12, 12), 0xff5252);
+    bal.position.y = 1.35;
+    handSlot.add(string, bal);
+  } else if (handId === 'shield') {
+    const sh = mesh(new THREE.BoxGeometry(0.14, 0.82, 0.68), 0x1e88e5);
+    const crossV = mesh(new THREE.BoxGeometry(0.16, 0.65, 0.14), 0xffd54f);
+    const crossH = mesh(new THREE.BoxGeometry(0.16, 0.14, 0.52), 0xffd54f);
+    handSlot.add(sh, crossV, crossH);
+  }
+
+  // 4. 腳步光環 (3種)
+  const trailId = slots.trail;
+  if (trailId === 'aura_star') {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.85, 1.18, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffd700, side: THREE.DoubleSide, transparent: true, opacity: 0.78 })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    trailSlot.add(ring);
+  } else if (trailId === 'aura_rainbow') {
+    [0xff5252, 0xffeb3b, 0x4fc3f7].forEach((col, idx) => {
+      const r = new THREE.Mesh(
+        new THREE.RingGeometry(0.75 + idx * 0.18, 0.9 + idx * 0.18, 24),
+        new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide, transparent: true, opacity: 0.72 })
+      );
+      r.rotation.x = -Math.PI / 2;
+      trailSlot.add(r);
+    });
+  } else if (trailId === 'aura_flame') {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.8, 1.22, 16),
+      new THREE.MeshBasicMaterial({ color: 0xff6d00, side: THREE.DoubleSide, transparent: true, opacity: 0.82 })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    trailSlot.add(ring);
   }
 }
+const applyHat = applyEquipment;
 
 /* =========================================================
  * 8. 角色移動、跳躍、快速傳送＆平板觸控全方位控制
@@ -1398,7 +1574,7 @@ $('pubTableBtn').onclick = () => {
 $('closePubModal').onclick = closeAll;
 
 /* =========================================================
- * 10. 家長 Gmail 註冊登入 & 兒童多組 Profile 管理（8 種角色）
+ * 10. 本機多組兒童學習檔案（Profile）管理（8 種 3D 動物角色）
  * ========================================================= */
 let selectedNewAvatarId = 'fox';
 let editingProfileId = null;
@@ -1501,8 +1677,8 @@ if ($('cancelEditProfileBtn')) {
 
 function renderProfileCards() {
   const acc = getCurrentAccount();
-  $('loggedParentEmail').textContent = acc.email;
   const grid = $('profileCardsGrid');
+  if (!grid) return;
   grid.innerHTML = '';
 
   acc.profiles.forEach(prof => {
@@ -1566,130 +1742,14 @@ function selectProfile(profileId) {
   const target = acc.profiles.find(p => p.id === profileId);
   if (!target) return;
   acc.activeProfileId = target.id;
-  state = target;
+  state = ensureProfileSlots(target);
   saveDB();
   syncProfileCardsVisual();
   rebuildPlayerAvatar(state.avatarId);
   switchGrade(state.grade);
-  applyHat();
+  syncIslandDecorations();
   updateHUD();
 }
-
-function renderSavedGoogleAccounts() {
-  const box = $('savedGoogleAccountsList');
-  if (!box) return;
-  box.innerHTML = '';
-  const emails = Object.keys(db.accounts || {}).filter(e => e && e.includes('@'));
-  if (!emails.length) return;
-  emails.forEach(mail => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'google-acc-item btn w-full bg-white rounded-xl border-2 border-[#dadce0] p-2.5 flex items-center gap-3 text-left hover:border-[#4285F4]';
-    const initial = (mail[0] || 'G').toUpperCase();
-    btn.innerHTML = `
-      <div class="w-8 h-8 rounded-full bg-[#4285F4] text-white font-black flex items-center justify-center text-sm">${initial}</div>
-      <div class="flex-1 overflow-hidden">
-        <div class="text-xs font-black text-gray-800 truncate">${mail}</div>
-      </div>
-      <span class="text-xs font-black text-[#4285F4]">一鍵登入 →</span>
-    `;
-    btn.onclick = () => {
-      initAudio(); play('coin');
-      loginWithGmail(mail, 'google-oauth');
-    };
-    box.appendChild(btn);
-  });
-}
-
-function loginWithGmail(emailStr, passStr = '') {
-  const cleanEmail = (emailStr || '').trim().toLowerCase();
-  if (!cleanEmail || !cleanEmail.includes('@')) {
-    $('authErrorMsg').textContent = '⚠️ 請先輸入您的 Gmail 信箱！';
-    $('authErrorMsg').classList.remove('hidden');
-    return false;
-  }
-  $('authErrorMsg').classList.add('hidden');
-  const isNewAccount = !db.accounts[cleanEmail];
-  db.currentEmail = cleanEmail;
-  if (isNewAccount) {
-    const firstChild = createDefaultChildProfile('寶貝一號（五年級）', '5', 'fox');
-    db.accounts[cleanEmail] = {
-      email: cleanEmail,
-      pass: passStr || '',
-      activeProfileId: firstChild.id,
-      profiles: [firstChild]
-    };
-  }
-  state = getActiveProfile();
-  saveDB();
-  renderSavedGoogleAccounts();
-  rebuildPlayerAvatar(state.avatarId);
-  switchGrade(state.grade);
-  updateHUD();
-
-  $('authSection').classList.add('hidden');
-  $('profileSection').classList.remove('hidden');
-  $('profileSection').classList.add('flex');
-  renderAvatarPicker();
-  renderProfileCards();
-  return true;
-}
-
-window.__quickGoogleAuth = () => {
-  initAudio(); play('coin');
-  renderSavedGoogleAccounts();
-  const chooser = $('googleChooserBox');
-  if (chooser && chooser.classList.contains('hidden')) {
-    chooser.classList.remove('hidden');
-    if ($('googleCustomMail')) $('googleCustomMail').focus();
-    return;
-  }
-  const mail = (($('googleCustomMail') && $('googleCustomMail').value) || $('gmailInput').value || '').trim();
-  if (mail) {
-    loginWithGmail(mail, 'google-oauth');
-  } else if ($('googleCustomMail')) {
-    $('googleCustomMail').focus();
-  }
-};
-
-window.__submitGmailForm = () => {
-  initAudio(); play('coin');
-  loginWithGmail($('gmailInput').value, $('passInput').value);
-};
-
-$('googleQuickBtn').onclick = window.__quickGoogleAuth;
-$('gmailSubmitBtn').onclick = window.__submitGmailForm;
-if ($('closeGoogleChooser')) {
-  $('closeGoogleChooser').onclick = () => $('googleChooserBox').classList.add('hidden');
-}
-if ($('googleCustomConfirmBtn')) {
-  $('googleCustomConfirmBtn').onclick = () => {
-    initAudio(); play('coin');
-    const customMail = (($('googleCustomMail') && $('googleCustomMail').value) || '').trim();
-    loginWithGmail(customMail, 'google-oauth');
-  };
-}
-if ($('googleCustomMail')) {
-  $('googleCustomMail').addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const customMail = ($('googleCustomMail').value || '').trim();
-      loginWithGmail(customMail, 'google-oauth');
-    }
-  });
-}
-['gmailInput', 'passInput'].forEach(id => {
-  const el = $(id);
-  if (el) el.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); window.__submitGmailForm(); }
-  });
-});
-
-$('logoutBtn').onclick = () => {
-  $('profileSection').classList.add('hidden');
-  $('profileSection').classList.remove('flex');
-  $('authSection').classList.remove('hidden');
-};
 
 $('createProfileBtn').onclick = () => {
   initAudio();
@@ -1727,14 +1787,18 @@ $('enterIslandBtn').onclick = () => {
   $('authProfileModal').classList.add('hidden');
   uiOpen = false;
 };
+if ($('topEnterIslandBtn')) {
+  $('topEnterIslandBtn').onclick = () => {
+    initAudio();
+    $('authProfileModal').classList.add('hidden');
+    uiOpen = false;
+  };
+}
 
 $('profileChipBtn').onclick = () => {
   initAudio();
   closeAll();
   uiOpen = true;
-  $('authSection').classList.add('hidden');
-  $('profileSection').classList.remove('hidden');
-  $('profileSection').classList.add('flex');
   renderAvatarPicker();
   renderProfileCards();
   $('authProfileModal').classList.remove('hidden');
@@ -2211,8 +2275,7 @@ function updateHUD() {
   $('hudAvatarIcon').textContent = av.icon;
   $('hudProfileName').textContent = state.name;
   $('hudGradeBadge').textContent = gCfg.shortName;
-  const curMail = getCurrentAccount().email;
-  $('activeParentMail').textContent = curMail ? `📧 ${curMail}` : '';
+  if ($('activeParentMail')) $('activeParentMail').textContent = '💾 本機儲存';
 
   $('stars').textContent = state.stars || 0;
   $('stars2').textContent = state.stars || 0;
@@ -2246,35 +2309,106 @@ function updateHUD() {
   $('wrongCountTab').textContent = state.wrongBook.length;
 }
 
+let currentShopCat = 'all';
+
+function selectShopCategory(cat) {
+  currentShopCat = cat;
+  document.querySelectorAll('#shopFilterTabs .shop-cat-tab').forEach(btn => {
+    btn.classList.toggle('active-border', btn.dataset.scat === cat);
+  });
+  renderShop();
+}
+
+document.querySelectorAll('#shopFilterTabs .shop-cat-tab').forEach(btn => {
+  btn.onclick = () => {
+    initAudio(); play('talk');
+    selectShopCategory(btn.dataset.scat);
+  };
+});
+
+function isItemEquipped(item) {
+  ensureProfileSlots(state);
+  if (item.type === 'deco') return !!state.owned[item.id];
+  return state.equippedSlots[item.type] === item.id;
+}
+
 function renderShop() {
+  ensureProfileSlots(state);
   const box = $('shop'); box.innerHTML = '';
-  SHOP.forEach(item => {
+  const typeLabelMap = { hat:'🎩 頭飾', back:'🪽 背飾', hand:'🪄 手持', trail:'✨ 光環', deco:'🎡 景觀' };
+  const list = currentShopCat === 'all' ? SHOP : SHOP.filter(x => x.type === currentShopCat);
+
+  list.forEach(item => {
     const owned = !!state.owned[item.id];
+    const eq = isItemEquipped(item);
     const el = document.createElement('button');
-    el.className = 'shop-item btn rounded-2xl border-4 border-[#eadfbf] bg-white p-3 text-left';
+    el.type = 'button';
+    el.className = 'shop-item btn rounded-2xl border-4 border-[#eadfbf] bg-white p-3.5 text-left flex flex-col justify-between gap-1.5';
     el.dataset.id = item.id;
-    el.innerHTML = `<div class="text-4xl">${item.icon}</div><div class="font-black text-[#5a4630]">${item.name}</div>
-      <div class="text-sm font-bold ${owned ? 'text-[#3fb98a]' : 'text-amber-700'}">${owned ? (item.type==='hat' ? '已擁有・點擊裝備' : '已種下 🌼') : '⭐ ' + item.cost}</div>`;
+    el.dataset.itype = item.type;
+    let statusText = `⭐ ${item.cost} 星星兌換`;
+    if (owned) {
+      if (item.type === 'deco') statusText = '🏡 已建造於島上';
+      else statusText = eq ? '✨ 裝備中（點擊卸下）' : '✓ 已擁有（點擊穿戴）';
+    }
+    el.innerHTML = `
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="text-4xl">${item.icon}</span>
+          <span class="text-[11px] font-black px-2 py-0.5 rounded-full bg-[#fff6dc] text-[#8c6d46]">${typeLabelMap[item.type] || ''}</span>
+        </div>
+        <div class="font-black text-base text-[#5a4630] mt-1">${item.name}</div>
+        <div class="text-xs text-[#8c6d46] leading-snug mt-0.5">${item.desc || ''}</div>
+      </div>
+      <div class="text-xs font-black pt-1 border-t border-[#f0e4c8] ${owned ? (eq ? 'text-[#c94a29]' : 'text-[#2b8a63]') : 'text-amber-700'}">
+        ${statusText}
+      </div>
+    `;
     el.onclick = () => buyOrEquip(item);
     box.appendChild(el);
   });
   syncShopVisual();
 }
+
 function syncShopVisual() {
-  document.querySelectorAll('#shop .shop-item').forEach(el => el.classList.toggle('active-border', el.dataset.id === state.equipped));
+  ensureProfileSlots(state);
+  document.querySelectorAll('#shop .shop-item').forEach(el => {
+    const item = SHOP.find(x => x.id === el.dataset.id);
+    const active = item ? isItemEquipped(item) : false;
+    el.classList.toggle('active-border', active);
+  });
 }
+
 function buyOrEquip(item) {
+  ensureProfileSlots(state);
   if (!state.owned[item.id]) {
-    if (state.stars < item.cost) { play('wrong'); return; }
-    state.stars -= item.cost; state.owned[item.id] = true; play('coin'); confetti(40);
-    if (item.type === 'deco') buildBonusFlowers();
+    if (state.stars < item.cost) { play('wrong'); return false; }
+    state.stars -= item.cost;
+    state.owned[item.id] = true;
+    play('coin'); confetti(40);
+    if (item.type === 'deco') syncIslandDecorations();
   }
-  if (item.type === 'hat') { state.equipped = state.equipped === item.id ? null : item.id; applyHat(); }
+  if (item.type !== 'deco') {
+    const cur = state.equippedSlots[item.type];
+    const nextVal = cur === item.id ? null : item.id;
+    state.equippedSlots[item.type] = nextVal;
+    if (item.type === 'hat') state.equipped = nextVal;
+    applyEquipment();
+  }
   save(); updateHUD(); renderShop();
+  return true;
 }
-function openBag() { closeAll(); uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false); renderShop(); $('bagModal').classList.remove('hidden'); }
+
+function openBag() {
+  closeAll();
+  uiOpen = true;
+  Object.keys(keys).forEach(k => keys[k] = false);
+  selectShopCategory(currentShopCat || 'all');
+  $('bagModal').classList.remove('hidden');
+}
 $('bagBtn').onclick = () => { initAudio(); openBag(); };
 $('closeBag').onclick = closeAll;
+if ($('closeBagBottom')) $('closeBagBottom').onclick = closeAll;
 $('muteBtn').onclick = () => {
   initAudio(); musicOn = !musicOn;
   if (musicGain) musicGain.gain.value = musicOn ? 0.05 : 0;
@@ -2312,6 +2446,8 @@ function loop() {
   trees.forEach(g => g.rotation.z = Math.sin(t*1.2 + g.userData.sway)*0.03);
   npcs.forEach((n,i) => { n.obj.position.y = Math.abs(Math.sin(t*2 + i))*0.08; n.marker.rotation.y = t*2; n.marker.position.y = 3.4 + Math.sin(t*3)*.15; });
   LANDMARKS.forEach(L => { if (L.group.userData.spin) L.group.userData.spin.rotation.z = t*.8; });
+  if (windmillBlades) windmillBlades.rotation.z = t * 1.1;
+  if (trailSlot.children.length > 0) trailSlot.rotation.y = t * 2.2;
   clouds.forEach(c => { c.position.x += dt*1.2; if (c.position.x > 90) c.position.x = -90; });
   drawConfetti(dt);
   renderer.render(scene, camera);
@@ -2323,10 +2459,12 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight); resizeCv();
 });
 
-// 初始化角色模型、年級狀態與主迴圈
+// 初始化角色選擇器、3D角色模型、年級狀態、島嶼景觀與主迴圈
+renderAvatarPicker();
+renderProfileCards();
 rebuildPlayerAvatar(state.avatarId);
 switchGrade(state.grade);
-if (state.owned && state.owned.seeds) buildBonusFlowers();
+syncIslandDecorations();
 loop();
 
 // 供自動化測試與檢測使用
@@ -2335,9 +2473,9 @@ window.__island = {
   get SUBJECTS() { return SUBJECTS; },
   get autoWalkTarget() { return autoWalkTarget; },
   AVATARS, SHOP, CURRICULUM_ALL, player, npcs,
-  loginWithGmail, selectProfile, startEditProfile, cancelEditProfile, deleteProfile, selectAvatarOption, switchGrade,
+  selectProfile, startEditProfile, cancelEditProfile, deleteProfile, selectAvatarOption, switchGrade,
   openSubjectHub, selectUnitCard, startLesson, startUnitQuiz, startGrandMixQuiz,
-  answer, openNotebook, renderNotebookTab, buyOrEquip, teleportTo,
+  answer, openNotebook, renderNotebookTab, openBag, selectShopCategory, buyOrEquip, teleportTo,
   setDpadDirection, setAutoWalkTarget, triggerJump
 };
 </script>
