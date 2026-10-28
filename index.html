@@ -2,209 +2,383 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>知識小島 🏝️ 康軒小五沉浸式教學與闖關大冒險</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<title>知識小島 🏝️ 國小 1～6 年級沉浸式 3D 教學與考古題闖關大冒險</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
 <script src="./data/curriculum.js"></script>
 <script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
 <style>
-  :root { --mint:#7ed6b9; --cream:#fff6dc; --coral:#ff8a65; --sky:#8fd3fe; --brown:#7a5a3a; }
-  html,body { margin:0; height:100%; overflow:hidden; font-family:'Zen Maru Gothic',sans-serif; background:#8fd3fe; }
-  canvas { display:block; }
-  .card { background:var(--cream); border:4px solid #e8d7a8; border-radius:28px; box-shadow:0 8px 0 #d9c48c, 0 12px 30px rgba(0,0,0,.18); }
-  .pill { background:rgba(255,246,220,.94); border:3px solid #e8d7a8; border-radius:999px; }
-  .btn { transition:transform .1s, box-shadow .1s, border-color .15s, background-color .15s; box-shadow:0 5px 0 rgba(0,0,0,.16); }
-  .btn:active { transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,.16); }
-  .active-border { border-color:#ff8a65 !important; background:#ffe3d6 !important; box-shadow:0 0 0 3px rgba(255,138,101,.35), 0 5px 0 rgba(0,0,0,.16) !important; }
-  .opt.correct { border-color:#3fb98a !important; background:#d4f5e6 !important; }
-  .opt.wrong { border-color:#e57373 !important; background:#fde0e0 !important; animation:shake .35s; }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-  @keyframes pop { 0%{transform:scale(.85);opacity:0} 80%{transform:scale(1.02)} 100%{transform:scale(1);opacity:1} }
-  .pop { animation:pop .25s ease-out; }
-  .badge.locked { filter:grayscale(1); opacity:.35; }
-  #prompt { transition:opacity .2s; }
-  .hidden-soft { opacity:0; pointer-events:none; }
-  .lesson-body b { color:#c94a29; background:#fff0c2; padding:0 4px; border-radius:6px; }
+  * { font-family: 'Zen Maru Gothic', 'Microsoft JhengHei', sans-serif; user-select: none; }
+  body { margin: 0; overflow: hidden; background: #8fd3fe; }
+  .card {
+    background: #fffdf4;
+    border: 4px solid #e6d5b8;
+    border-radius: 28px;
+    box-shadow: 0 10px 0 #d4be98, 0 16px 30px rgba(0,0,0,0.18);
+  }
+  .pill {
+    background: #fff9e6;
+    border: 3px solid #e2cfa8;
+    border-radius: 999px;
+    box-shadow: 0 4px 0 #cdb68c;
+  }
+  .btn { transition: transform .1s, box-shadow .1s; box-shadow: 0 5px 0 rgba(0,0,0,0.18); }
+  .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.18); }
+  .active-border {
+    border-color: #ff8a65 !important;
+    background-color: #fff3eb !important;
+    box-shadow: 0 0 0 4px rgba(255,138,101,0.38) !important;
+  }
+  .opt.correct { border-color: #3fb98a !important; background-color: #e6fbf2 !important; }
+  .opt.wrong   { border-color: #e57373 !important; background-color: #fdeaea !important; animation: shake .35s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  @keyframes pop { 0% { transform: scale(.88); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .pop { animation: pop .22s cubic-bezier(.34,1.56,.64,1); }
+  .badge { filter: grayscale(1) opacity(.35); transition: all .3s; }
+  .badge.unlocked { filter: none; transform: scale(1.08); }
+  .lesson-body b { color: #c94a29; background: #fff0d6; padding: 0 4px; border-radius: 6px; }
 </style>
 </head>
 <body>
-<div id="app"></div>
 
-<!-- ===== 左上：星星 + 徽章 + 學習進度 ===== -->
-<div class="fixed top-4 left-4 flex flex-col gap-2.5 select-none z-10">
-  <div class="flex items-center gap-2">
-    <div class="pill px-5 py-2 text-2xl font-black text-amber-700 flex items-center gap-2">⭐ <span id="stars">0</span></div>
-    <div class="pill px-4 py-2 text-sm font-black text-[#7a5a3a]">📖 教學 <span id="lessonStat">0/44</span>｜✍️ 單元 <span id="unitStat">0/44</span></div>
+<!-- ===== 左上角：當前兒童 Profile、年級切換、教材版本表按鈕 ===== -->
+<div class="fixed top-4 left-4 z-20 flex flex-wrap items-center gap-2">
+  <button id="profileChipBtn" class="pill px-4 py-2 flex items-center gap-2 text-[#5a4630] font-black text-base hover:bg-[#fff2cc] transition">
+    <span id="hudAvatarIcon" class="text-2xl">🦊</span>
+    <span id="hudProfileName">小小冒險家</span>
+    <span class="px-2.5 py-0.5 rounded-full bg-[#ff8a65] text-white text-xs" id="hudGradeBadge">五年級</span>
+    <span class="text-xs text-[#a08560]">▼ 切換角色</span>
+  </button>
+
+  <!-- 1~6年級快速切換列 -->
+  <div id="gradeSwitchBar" class="pill px-2.5 py-1.5 flex items-center gap-1 bg-white/90">
+    <span class="text-xs font-black text-[#8c6d46] px-1">年級：</span>
+    <button data-grade="1" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">1年級</button>
+    <button data-grade="2" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">2年級</button>
+    <button data-grade="3" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">3年級</button>
+    <button data-grade="4" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">4年級</button>
+    <button data-grade="5" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">5年級</button>
+    <button data-grade="6" class="grade-tab px-2.5 py-1 rounded-full text-xs font-black text-[#5a4630] border-2 border-transparent">6年級</button>
   </div>
-  <div class="card px-4 py-3">
-    <div class="text-sm font-bold text-[#7a5a3a] mb-1.5">四大領域學霸徽章 <span id="badgeCount">0</span>/4 <span class="text-xs text-[#a08560]">（任一科通過3單元即獲徽章）</span></div>
-    <div class="flex gap-2.5 text-3xl">
-      <span class="badge locked" data-badge="chinese" title="國語營地">📖</span>
-      <span class="badge locked" data-badge="math" title="數學工坊">📐</span>
-      <span class="badge locked" data-badge="science" title="自然研究站">🔬</span>
-      <span class="badge locked" data-badge="social" title="社會歷史館">🏯</span>
+
+  <button id="pubTableBtn" class="pill btn px-3.5 py-2 font-black text-[#5a4630] text-sm bg-[#e6fbf2] border-[#7ed6b9]">
+    🏫 大豐國小版本表 & 考古題庫
+  </button>
+</div>
+
+<!-- ===== 右上角：星星、徽章收集進度、知識筆記本、背包商店 ===== -->
+<div class="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
+  <div class="flex flex-wrap items-center justify-end gap-2">
+    <div class="pill px-4 py-1.5 flex items-center gap-1.5 text-lg font-black text-amber-700">
+      <span>⭐</span><span id="stars">0</span>
     </div>
-    <div class="w-52 h-3 bg-[#eadfbf] rounded-full mt-2 overflow-hidden"><div id="badgeBar" class="h-full bg-[#7ed6b9] transition-all duration-500" style="width:0%"></div></div>
+    <button id="noteBtn" class="pill btn px-4 py-1.5 text-base font-black text-[#5a4630] flex items-center gap-1 bg-[#fff4d2]">
+      📘 知識筆記本 & 錯題本
+    </button>
+    <button id="bagBtn" class="pill btn px-4 py-1.5 text-base font-black text-[#7a5a3a] flex items-center gap-1">
+      🎒 背包商店
+    </button>
+    <button id="muteBtn" class="pill btn px-3.5 py-1.5 text-base font-bold text-[#7a5a3a]">🎵 音樂：開</button>
+  </div>
+
+  <!-- 5 大科目徽章進度 -->
+  <div class="card px-4 py-2.5 w-80">
+    <div class="flex justify-between items-center text-xs font-bold text-[#7a5a3a] mb-1">
+      <span>🏅 本年級領域徽章 (<span id="badgeCount">0</span>/<span id="badgeTotal">5</span>)</span>
+      <span>📚 已讀 <span id="lessonStat">0/0</span>｜⭐ 通關 <span id="unitStat">0/0</span></span>
+    </div>
+    <div class="w-full h-3 bg-[#ead9b5] rounded-full overflow-hidden mb-2">
+      <div id="badgeBar" class="h-full bg-gradient-to-r from-[#5fd3a6] to-[#ff8a65] transition-all duration-500" style="width:0%"></div>
+    </div>
+    <div id="badgeIconsRow" class="flex justify-around text-xl">
+      <div data-badge="chinese" class="badge" title="國語營地徽章">📖</div>
+      <div data-badge="math"    class="badge" title="數學工坊徽章">📐</div>
+      <div data-badge="english" class="badge" title="英語村徽章">🔤</div>
+      <div data-badge="science" class="badge" title="自然/生活探索徽章">🔬</div>
+      <div data-badge="social"  class="badge" title="社會歷史館徽章">🏯</div>
+    </div>
   </div>
 </div>
 
-<!-- ===== 左下：地標快速導航 ===== -->
-<div class="fixed bottom-4 left-4 flex flex-wrap gap-2 select-none z-10">
-  <button data-tp="chinese" class="tp-btn btn pill px-3.5 py-1.5 text-sm font-black text-[#7a5a3a]">📖 國語營地</button>
-  <button data-tp="math" class="tp-btn btn pill px-3.5 py-1.5 text-sm font-black text-[#7a5a3a]">📐 數學工坊</button>
-  <button data-tp="science" class="tp-btn btn pill px-3.5 py-1.5 text-sm font-black text-[#7a5a3a]">🔬 自然研究站</button>
-  <button data-tp="social" class="tp-btn btn pill px-3.5 py-1.5 text-sm font-black text-[#7a5a3a]">🏯 社會歷史館</button>
-</div>
-
-<!-- ===== 右上：操作提示 + 筆記本 + 背包 ===== -->
-<div class="fixed top-4 right-4 flex flex-col items-end gap-2.5 select-none z-10">
-  <div class="card px-4 py-2.5 text-[#7a5a3a] text-sm leading-6">
-    <div><kbd class="font-black">W A S D</kbd> / 方向鍵　移動　｜　<kbd class="font-black">空白鍵</kbd>　跳躍</div>
-    <div><kbd class="font-black">E</kbd>　NPC 教學與闖關　｜　<kbd class="font-black">N</kbd>　知識筆記本　｜　<kbd class="font-black">B</kbd>　背包商店</div>
+<!-- ===== 左下角：操作指引 + 5 大地標快速傳送門 ===== -->
+<div class="fixed bottom-4 left-4 z-20 card px-4 py-3 text-[#7a5a3a] space-y-2 max-w-md">
+  <div class="font-black text-sm flex items-center justify-between">
+    <span>🎮 島嶼冒險操作＆地標快速傳送</span>
+    <span id="activeParentMail" class="text-xs text-[#a08560] font-bold"></span>
   </div>
-  <div class="flex gap-2">
-    <button id="noteBtn" class="btn pill px-4 py-2 text-lg font-black text-[#7a5a3a]">📘 知識筆記本</button>
-    <button id="bagBtn" class="btn pill px-4 py-2 text-lg font-black text-[#7a5a3a]">🎒 背包商店</button>
+  <div class="text-xs space-y-0.5">
+    <div><kbd class="px-1.5 py-0.5 bg-[#f4e6c6] rounded font-black">W A S D</kbd> / <kbd class="px-1.5 py-0.5 bg-[#f4e6c6] rounded font-black">方向鍵</kbd> 移動・<kbd class="px-1.5 py-0.5 bg-[#f4e6c6] rounded font-black">空白鍵</kbd> 跳躍・<kbd class="px-1.5 py-0.5 bg-[#ff8a65] text-white rounded font-black">E</kbd> 進入學堂</div>
   </div>
-  <button id="muteBtn" class="btn pill px-3.5 py-1 text-sm font-bold text-[#7a5a3a]">🎵 音樂：開</button>
+  <div id="tpButtonsRow" class="grid grid-cols-3 gap-1.5 pt-1">
+    <button data-tp="chinese" class="tp-btn btn text-xs font-black px-2 py-1.5 rounded-xl bg-[#ffe8df] text-[#b44b2b] border-2 border-[#f3c3b1]">📖 國語營地</button>
+    <button data-tp="math"    class="tp-btn btn text-xs font-black px-2 py-1.5 rounded-xl bg-[#e2f0ff] text-[#2664a8] border-2 border-[#b3d4f7]">📐 數學工坊</button>
+    <button data-tp="english" class="tp-btn btn text-xs font-black px-2 py-1.5 rounded-xl bg-[#f3e5f5] text-[#7b1fa2] border-2 border-[#ce93d8]">🔤 英語村</button>
+    <button data-tp="science" class="tp-btn btn text-xs font-black px-2 py-1.5 rounded-xl bg-[#dff7ee] text-[#1f7a58] border-2 border-[#a8e4cd]">🔬 <span id="tpScienceLabel">自然研究站</span></button>
+    <button data-tp="social"  id="tpSocialBtn" class="tp-btn btn text-xs font-black px-2 py-1.5 rounded-xl bg-[#fcecd9] text-[#9c5221] border-2 border-[#ecc59a]">🏯 社會歷史館</button>
+  </div>
 </div>
 
-<!-- ===== 互動提示 ===== -->
-<div id="prompt" class="hidden-soft fixed bottom-20 left-1/2 -translate-x-1/2 pill px-6 py-3 text-xl font-black text-[#7a5a3a] z-10">
-  按 <span class="bg-[#ff8a65] text-white rounded-lg px-2">E</span> 找 <span id="promptName"></span> 上課與闖關
+<!-- ===== 靠近 NPC 互動提示 ===== -->
+<div id="prompt" class="hidden fixed bottom-28 left-1/2 -translate-x-1/2 z-20 pill px-6 py-2.5 text-xl font-black text-[#7a5a3a] pop cursor-pointer">
+  按 <span class="px-2.5 py-0.5 bg-[#ff8a65] text-white rounded-full">E</span> 或點此與 <span id="promptName"></span> 開始學習！
 </div>
-<button id="mobileE" class="btn hidden fixed bottom-16 right-6 w-20 h-20 rounded-full bg-[#ff8a65] text-white text-3xl font-black z-10">E</button>
+<button id="mobileE" class="hidden fixed bottom-6 right-6 z-20 btn bg-[#ff8a65] text-white text-xl font-black w-20 h-20 rounded-full">互動 E</button>
 
-<!-- ===== 主學習視窗（單元大廳 / 互動教學課堂 / 題庫闖關） ===== -->
-<div id="quizModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-3 md:p-6 z-20">
-  <div class="card pop w-full max-w-4xl p-5 md:p-7 max-h-[94vh] flex flex-col">
-    <!-- 頂部 NPC 列 -->
-    <div class="flex items-center gap-3 pb-3 border-b-2 border-[#eadfbf]">
-      <div id="npcFace" class="text-5xl">🦉</div>
-      <div>
-        <div id="npcName" class="text-xl md:text-2xl font-black text-[#7a5a3a]"></div>
-        <div id="npcPlace" class="text-sm text-[#a08560] font-bold"></div>
+<!-- ===== 1. Gmail 家長登入 & 兒童多組 Profile 選擇彈窗（支援 8 種 3D 角色） ===== -->
+<div id="authProfileModal" class="fixed inset-0 bg-[#56a8dc]/85 flex items-center justify-center z-40 p-4 overflow-y-auto">
+  <div class="card pop w-full max-w-4xl p-6 md:p-8 max-h-[94vh] flex flex-col">
+    <!-- 步驟 A：Gmail 登入 / 註冊區塊 -->
+    <div id="authSection" class="space-y-4">
+      <div class="text-center">
+        <div class="text-5xl mb-1">🏝️</div>
+        <h1 class="text-2xl md:text-3xl font-black text-[#5a4630]">歡迎來到大豐國小 1～6 年級 3D 知識小島！</h1>
+        <p class="text-sm md:text-base text-[#8c6d46] font-bold mt-1">
+          請使用家長的 <b>Gmail 帳號登入或註冊</b>，即可為家中不同年級的小孩建立專屬角色與獨立學習紀錄！
+        </p>
       </div>
-      <div id="qProgress" class="ml-auto pill px-4 py-1 text-sm md:text-base font-black text-[#7a5a3a]"></div>
-    </div>
 
-    <!-- 內容區（可捲動） -->
-    <div class="overflow-y-auto flex-1 pr-1 mt-3 space-y-3">
-      <div id="dialog" class="bg-white/80 rounded-2xl p-4 text-lg md:text-xl leading-8 text-[#5a4630]"></div>
-      <div id="subContent"></div>
-      <div id="options" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-1"></div>
-      <div id="feedback" class="text-base md:text-lg font-bold leading-7"></div>
-    </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+        <!-- 左欄：Google 一鍵快速登入 + Gmail 帳密表單 -->
+        <div class="bg-white rounded-3xl border-4 border-[#eadfbf] p-5 space-y-3">
+          <div class="font-black text-lg text-[#5a4630] flex items-center gap-2">
+            <span>📧 Gmail 家長帳號登入 / 註冊</span>
+          </div>
 
-    <!-- 底部按鈕列 -->
-    <div class="flex flex-wrap justify-between items-center gap-2 pt-3 mt-3 border-t-2 border-[#eadfbf]">
-      <div class="flex gap-2">
-        <button id="backHubBtn" class="btn hidden px-4 py-2 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-bold text-base">← 回單元列表</button>
-        <button id="prevStepBtn" class="btn hidden px-4 py-2 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-bold text-base">◀ 上一頁</button>
+          <button id="googleQuickBtn" class="btn w-full py-2.5 px-4 rounded-2xl bg-[#4285F4] text-white font-black text-base flex items-center justify-center gap-2">
+            <span class="bg-white text-[#4285F4] rounded-full w-6 h-6 inline-flex items-center justify-center font-black">G</span>
+            使用 Google (Gmail) 帳號一鍵快速登入
+          </button>
+
+          <div class="text-center text-xs font-bold text-[#a08560]">—— 或輸入 Gmail 註冊／登入 ——</div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-black text-[#7a5a3a]">家長 Gmail 信箱：</label>
+            <input id="gmailInput" type="email" placeholder="example@gmail.com" value="wadeyu@gmail.com"
+              class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630] focus:outline-none focus:border-[#ff8a65]" />
+            <label class="block text-xs font-black text-[#7a5a3a]">密碼（首次輸入即自動註冊）：</label>
+            <input id="passInput" type="password" placeholder="請輸入密碼（至少 4 碼）" value="1234"
+              class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630] focus:outline-none focus:border-[#ff8a65]" />
+            <div id="authErrorMsg" class="text-xs font-bold text-red-600 hidden"></div>
+            <button id="gmailSubmitBtn" class="btn w-full py-2.5 rounded-2xl bg-[#ff8a65] text-white font-black text-base mt-1">
+              登入 / 註冊並進入孩子角色選擇 →
+            </button>
+          </div>
+        </div>
+
+        <!-- 右欄：大豐國小 115 學年度教材特色一覽 -->
+        <div class="bg-[#fff8e6] rounded-3xl border-4 border-[#eadfbf] p-5 flex flex-col justify-between space-y-3">
+          <div class="space-y-2">
+            <div class="font-black text-lg text-[#7a5a3a]">🌟 1～6 年級全版本教材＆功能亮點</div>
+            <ul class="text-sm text-[#6e563a] font-bold space-y-1.5 leading-6">
+              <li>✅ <b>對齊大豐國小 115 學年度版本表</b>：完整涵蓋 <b>康軒、南一、翰林(含 Twinkle)、何嘉仁(SuperFun)</b> 各年級指定版本！</li>
+              <li>✅ <b>米蘭老師考古題庫整合</b>：收錄 <b>98 個單元、294 張教學卡、643 道精選題目</b>，並可一鍵開啟各年級期中/期末段考卷雲端庫！</li>
+              <li>✅ <b>8 種 3D 動物角色＆多孩童獨立檔案</b>：每個孩子擁有專屬 3D 角色外觀、年級設定、星星徽章與錯題本！</li>
+            </ul>
+          </div>
+          <div class="text-xs text-[#8c6d46] bg-white/80 rounded-2xl p-3 border-2 border-[#eadfbf]">
+            💡 <b>跨裝置雲端同步支援</b>：預設自動保存於瀏覽器本機資料庫，家長亦可於下方設定 Firebase 金鑰開啟跨手機/平板即時同步。
+          </div>
+        </div>
       </div>
+    </div>
+
+    <!-- 步驟 B：登入後的「小孩 Profile 選擇與新增」畫面 -->
+    <div id="profileSection" class="hidden flex-col space-y-4 overflow-y-auto pr-1">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b-3 border-[#eadfbf] pb-3">
+        <div>
+          <div class="text-xs font-black text-[#a08560]">👨‍👩‍👧‍👦 家長帳號：<span id="loggedParentEmail" class="text-[#c94a29]"></span></div>
+          <h2 class="text-2xl font-black text-[#5a4630]">請選擇今天要登島學習的小朋友檔案（Profile）</h2>
+        </div>
+        <button id="logoutBtn" class="btn px-3.5 py-1.5 rounded-xl bg-[#eadfbf] text-[#7a5a3a] font-black text-xs">切換 Gmail 帳號</button>
+      </div>
+
+      <!-- 現有小孩 Profile 卡片列表 -->
+      <div id="profileCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+
+      <!-- 新增 / 編輯小孩 Profile 表單（含 8 種 3D 角色選擇器） -->
+      <div class="bg-white rounded-3xl border-4 border-[#eadfbf] p-5 space-y-3">
+        <div class="font-black text-lg text-[#5a4630]">➕ 為孩子建立新學習檔案（可選 1～6 年級與 8 種 3D 動物角色）</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-black text-[#7a5a3a] mb-1">1. 小朋友暱稱：</label>
+            <input id="newChildName" type="text" placeholder="例如：小宇、朵朵"
+              class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-bold text-[#5a4630]" />
+          </div>
+          <div>
+            <label class="block text-xs font-black text-[#7a5a3a] mb-1">2. 就讀年級（對應大豐國小版本）：</label>
+            <select id="newChildGrade" class="w-full px-3.5 py-2 rounded-xl border-3 border-[#e2cfa8] bg-[#fffdf7] font-black text-[#5a4630]">
+              <option value="1">國小一年級（國語康軒/數學南一/英語翰林/生活康軒）</option>
+              <option value="2">國小二年級（國語康軒/數學南一/英語翰林/生活康軒）</option>
+              <option value="3">國小三年級（國語自然社會英語康軒/數學翰林）</option>
+              <option value="4">國小四年級（國語自然社會康軒/數學翰林/英語何嘉仁）</option>
+              <option value="5" selected>國小五年級（國語數學自然社會英語皆康軒）</option>
+              <option value="6">國小六年級（國語社會康軒/數學南一/自然翰林/英語何嘉仁）</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button id="createProfileBtn" class="btn w-full py-2.5 rounded-2xl bg-[#3fb98a] text-white font-black text-base">
+              ✨ 新增小朋友檔案並立即登島
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-black text-[#7a5a3a] mb-1.5">3. 選擇小朋友在 3D 島嶼上的專屬動物角色（共 8 種角色，會直接改變 3D 人物造型！）：</label>
+          <div id="avatarPickerGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button id="enterIslandBtn" class="btn px-8 py-3 rounded-2xl bg-[#ff8a65] text-white font-black text-xl">
+          🚀 以所選角色登島開始學習 →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 2. 教學＆題庫互動視窗（支援先教學、後測驗、考古題雲端連結） ===== -->
+<div id="quizModal" class="hidden fixed inset-0 bg-black/45 flex items-center justify-center z-30 p-4 overflow-y-auto">
+  <div class="card pop w-full max-w-3xl p-6 max-h-[92vh] flex flex-col">
+    <div class="flex items-center justify-between mb-3 shrink-0">
+      <div class="flex items-center gap-3">
+        <div id="npcFace" class="text-4xl bg-[#fff3d1] w-14 h-14 rounded-2xl flex items-center justify-center border-3 border-[#e2cfa8]">🦉</div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="npcName" class="text-xl font-black text-[#7a5a3a]"></span>
+            <span id="pubVersionBadge" class="px-2.5 py-0.5 rounded-full bg-[#e6fbf2] border-2 border-[#7ed6b9] text-[#1f7a58] text-xs font-black"></span>
+          </div>
+          <div id="npcPlace" class="text-sm font-bold text-[#a08560]"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div id="qProgress" class="pill px-3.5 py-1 text-sm font-black text-[#7a5a3a]"></div>
+        <button id="closeQuiz" class="btn bg-[#f3e3c3] text-[#7a5a3a] font-black w-10 h-10 rounded-full text-lg">✕</button>
+      </div>
+    </div>
+
+    <div class="overflow-y-auto pr-1 space-y-3 flex-1">
+      <div id="dialog" class="bg-[#fff6dc] rounded-2xl p-4 text-lg font-bold text-[#5a4630] border-2 border-[#ead9b5] leading-relaxed"></div>
+      <div id="subContent" class="space-y-2.5"></div>
+      <div id="options" class="grid grid-cols-1 gap-2.5"></div>
+      <div id="feedback" class="text-base font-bold"></div>
+    </div>
+
+    <div class="flex justify-between items-center mt-4 pt-2 border-t-2 border-[#f0e2c4] shrink-0">
+      <button id="backHubBtn" class="hidden btn px-4 py-2 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-black text-base">← 返回單元列表</button>
       <div class="flex gap-2 ml-auto">
-        <button id="closeQuiz" class="btn px-5 py-2 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-bold text-base">離開</button>
-        <button id="nextBtn" class="btn px-6 py-2 rounded-2xl bg-[#7ed6b9] text-white font-black text-base md:text-lg">下一步 →</button>
+        <button id="prevStepBtn" class="hidden btn px-5 py-2.5 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-black text-base">◀ 上一頁</button>
+        <button id="nextBtn" class="hidden btn px-6 py-2.5 rounded-2xl bg-[#ff8a65] text-white font-black text-lg">下一步 →</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ===== 隨身知識筆記本視窗（全44單元132張教學卡＋錯題本） ===== -->
-<div id="noteModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-3 md:p-6 z-20">
-  <div class="card pop w-full max-w-4xl p-5 md:p-7 max-h-[92vh] flex flex-col">
-    <div class="flex items-center justify-between pb-3 border-b-2 border-[#eadfbf]">
-      <div class="text-2xl font-black text-[#7a5a3a]">📘 康軒小五隨身知識筆記本 & 錯題本</div>
-      <button id="closeNote" class="btn px-4 py-1.5 rounded-2xl bg-[#eadfbf] text-[#7a5a3a] font-bold">關閉 ✕</button>
+<!-- ===== 3. 隨身知識筆記本 & 錯題本視窗 ===== -->
+<div id="noteModal" class="hidden fixed inset-0 bg-black/45 flex items-center justify-center z-30 p-4">
+  <div class="card pop w-full max-w-4xl p-6 max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between mb-3 shrink-0">
+      <div class="text-2xl font-black text-[#7a5a3a]">📘 隨身知識筆記本 & 錯題複習本（<span id="noteGradeLabel">五年級</span>）</div>
+      <button id="closeNote" class="btn bg-[#f3e3c3] text-[#7a5a3a] font-black w-10 h-10 rounded-full text-lg">✕</button>
     </div>
-    <!-- 科目與錯題本 Tabs -->
-    <div id="noteTabs" class="flex flex-wrap gap-2 my-3">
-      <button data-ntab="chinese" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#7a5a3a]">📖 國語 (12課)</button>
-      <button data-ntab="math" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#7a5a3a]">📐 數學 (10單元)</button>
-      <button data-ntab="science" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#7a5a3a]">🔬 自然 (12活動)</button>
-      <button data-ntab="social" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#7a5a3a]">🏯 社會 (10課)</button>
-      <button data-ntab="wrong" class="note-tab btn px-4 py-2 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#c94a29]">🩺 我的錯題本 (<span id="wrongCountTab">0</span>)</button>
+
+    <div id="noteTabs" class="flex flex-wrap gap-2 mb-3 shrink-0">
+      <button data-ntab="chinese" class="note-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#5a4630]">📖 國語</button>
+      <button data-ntab="math"    class="note-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#5a4630]">📐 數學</button>
+      <button data-ntab="english" class="note-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#5a4630]">🔤 英語</button>
+      <button data-ntab="science" class="note-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#5a4630]">🔬 自然/生活</button>
+      <button data-ntab="social"  id="noteSocialTab" class="note-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#5a4630]">🏯 社會</button>
+      <button data-ntab="wrong"   class="note-tab btn px-3.5 py-1.5 rounded-2xl border-4 border-[#eadfbf] bg-white font-black text-[#c94a29]">🩺 我的錯題本 (<span id="wrongCountTab">0</span>)</button>
     </div>
-    <div id="noteBody" class="overflow-y-auto flex-1 space-y-3 pr-1"></div>
+
+    <div id="noteBody" class="overflow-y-auto pr-1 space-y-3 flex-1"></div>
   </div>
 </div>
 
-<!-- ===== 背包商店 ===== -->
-<div id="bagModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-20">
-  <div class="card pop w-full max-w-xl p-6">
-    <div class="flex items-center mb-3">
-      <div class="text-2xl font-black text-[#7a5a3a]">🎒 背包 & 星星商店</div>
+<!-- ===== 4. 大豐國小 115 學年度教科書版本一覽表 & 米蘭老師考古題庫專區 ===== -->
+<div id="pubModal" class="hidden fixed inset-0 bg-black/45 flex items-center justify-center z-30 p-4">
+  <div class="card pop w-full max-w-4xl p-6 max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between mb-3 shrink-0">
+      <div>
+        <div class="text-2xl font-black text-[#5a4630]">🏫 新北市新店區大豐國民小學 115學年度第1學期教科書版本一覽表</div>
+        <div class="text-xs font-bold text-[#8c6d46]">點擊任一年級即可切換島嶼教材，並可前往「米蘭老師題庫網站」下載各校歷屆段考考古題卷！</div>
+      </div>
+      <button id="closePubModal" class="btn bg-[#f3e3c3] text-[#7a5a3a] font-black w-10 h-10 rounded-full text-lg">✕</button>
+    </div>
+
+    <div class="overflow-y-auto pr-1 space-y-4 flex-1">
+      <div class="overflow-x-auto bg-white rounded-2xl border-4 border-[#eadfbf] p-3">
+        <table class="w-full text-sm text-center border-collapse">
+          <thead>
+            <tr class="bg-[#fff3d1] text-[#5a4630] font-black border-b-2 border-[#e2cfa8]">
+              <th class="p-2">年級</th>
+              <th class="p-2">國語</th>
+              <th class="p-2">數學</th>
+              <th class="p-2">英語</th>
+              <th class="p-2">生活/自然</th>
+              <th class="p-2">社會</th>
+              <th class="p-2">藝文/健體/本土語</th>
+              <th class="p-2">資訊</th>
+              <th class="p-2">快速切換</th>
+            </tr>
+          </thead>
+          <tbody id="pubTableBody" class="font-bold text-[#5a4630] divide-y divide-[#f0e4c8]"></tbody>
+        </table>
+      </div>
+
+      <div class="bg-[#fff6dc] rounded-2xl border-3 border-[#ead9b5] p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="font-black text-base text-[#5a4630]">📂 米蘭老師全國國小 1～6 年級段考考古題總庫（melances.com）</div>
+          <div class="text-xs font-bold text-[#8c6d46]">除島嶼內建的 643 道互動題與詳解外，您也可以直接開啟各年級雲端硬碟下載歷屆試卷 PDF 列印練習！</div>
+        </div>
+        <a href="https://melances.com/test-bank/" target="_blank" rel="noopener"
+          class="btn px-4 py-2 rounded-2xl bg-[#ff8a65] text-white font-black text-sm">
+          🔗 開啟米蘭老師考古題總站 ↗
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 5. 背包與星星商店 ===== -->
+<div id="bagModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-30 p-4">
+  <div class="card pop w-full max-w-lg p-6">
+    <div class="flex items-center justify-between mb-3">
+      <div class="text-2xl font-black text-[#7a5a3a]">🎒 星星兌換背包（角色專屬）</div>
       <div class="ml-auto pill px-4 py-1 font-black text-amber-700">⭐ <span id="stars2">0</span></div>
     </div>
-    <div class="text-[#a08560] mb-3 font-bold">讀完教學卡或闖關答對都能獲得星星！點選已擁有的帽子即可穿戴。</div>
+    <div class="text-[#a08560] mb-3 font-bold text-sm">每個小朋友的星星與配件各自獨立保存！點選已擁有的頭飾即可穿戴在 3D 動物角色頭上。</div>
     <div id="shop" class="grid grid-cols-2 gap-3"></div>
     <div class="flex justify-end mt-4"><button id="closeBag" class="btn px-5 py-2 rounded-2xl bg-[#7ed6b9] text-white font-black text-lg">關閉</button></div>
   </div>
 </div>
 
-<!-- ===== 歡迎畫面 ===== -->
-<div id="welcome" class="fixed inset-0 bg-[#8fd3fe]/85 flex items-center justify-center z-30 p-4">
-  <div class="card pop p-7 max-w-xl text-center">
-    <div class="text-6xl mb-2">🏝️</div>
-    <div class="text-3xl font-black text-[#7a5a3a] mb-2">歡迎來到康軒小五知識小島！</div>
-    <div class="text-base md:text-lg text-[#6e563a] leading-8 mb-4 text-left bg-white/70 rounded-2xl p-4">
-      🌟 <b>全新升級「先教學、後闖關」學習系統</b>：<br/>
-      • 收錄康軒五上 <b>44 個完整單元、132 張重點教學講義卡、373 道精選題庫</b>！<br/>
-      • 每個單元都能先點 <b>「📖 課堂教學」</b> 看老師圖解重點與口訣，再點 <b>「✍️ 單元測驗」</b> 實戰闖關！<br/>
-      • 答錯有 <b>引導提示</b>、答對有 <b>完整詳解</b>，還會自動收錄至 <b>「🩺 錯題本」</b> 隨時複習！
-    </div>
-    <button id="startBtn" class="btn px-8 py-3 rounded-2xl bg-[#ff8a65] text-white text-2xl font-black">出發登島冒險 →</button>
-  </div>
-</div>
-
-<canvas id="confetti" class="fixed inset-0 pointer-events-none z-40"></canvas>
+<canvas id="confetti" class="fixed inset-0 pointer-events-none z-50"></canvas>
 
 <script type="module">
 import * as THREE from 'three';
 
 /* =========================================================
- * 1. 科目與康軒題庫載入（44 單元、132 張教學卡、373 題）
+ * 1. 八大 3D 動物角色定義（Avatar Species Catalog）
+ *    小朋友的 Profile 選擇哪個角色，3D 島嶼主角就會即時變身！
  * ========================================================= */
-const SUBJECTS = {
-  chinese: {
-    npc:'貓頭鷹館長 歐文', face:'🦉', place:'國語營地・文學森林', color:0xff8a65,
-    intro:'咕咕～歡迎來到文學森林！這裡有五上第 1 到第 12 課的課文重點、形近字、成語與修辭教學，先聽我講課再闖關吧！',
-    units: (window.KANGXUAN_CURRICULUM?.chinese?.units) || []
-  },
-  math: {
-    npc:'柴犬學者 小八', face:'🐕', place:'數學工坊・幾何積木島', color:0x6fb7ff,
-    intro:'汪！歡迎來到數學工坊！從多位小數、因數倍數、分數通分到多邊形面積與立體圖形，我們一步一步推導公式！',
-    units: (window.KANGXUAN_CURRICULUM?.math?.units) || []
-  },
-  science: {
-    npc:'兔子博士 莉莉', face:'🐰', place:'自然研究站・生態探索實驗室', color:0x7ed6b9,
-    intro:'哈囉！在生態與科學實驗室裡，我們一起探索動物行為、聲光彩虹、太陽系星空與氧氣生鏽實驗！',
-    units: (window.KANGXUAN_CURRICULUM?.science?.units) || []
-  },
-  social: {
-    npc:'浣熊船長 阿福', face:'🦝', place:'社會歷史館・時光聚落', color:0xd9785a,
-    intro:'嘿呦！跟著船長一起認識臺灣的地理氣候、史前文化、原住民族，以及大航海時代的荷西與鄭氏歷史吧！',
-    units: (window.KANGXUAN_CURRICULUM?.social?.units) || []
-  }
-};
-
-/* =========================================================
- * 2. 遊戲狀態（localStorage 保存）
- * ========================================================= */
-const SAVE_KEY = 'learning-island-v2';
-const state = Object.assign({
-  stars: 0,
-  badges: {},
-  owned: {},
-  equipped: null,
-  lessonsRead: {},   // { [unitId]: true }
-  unitStars: {},     // { [unitId]: 1|2|3 }
-  wrongBook: []      // [{ subj, unitId, unitTitle, q, o, a, hint, explain }]
-}, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'));
-const save = () => localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+const AVATARS = [
+  { id: 'fox',     name: '赤狐小隊長 樂樂', icon: '🦊', desc: '機智勇敢的橘紅小狐狸', bodyColor: 0xf48fb1, headColor: 0xff8a65, earType: 'fox',     tailType: 'bushy', snoutColor: 0xfff3e0 },
+  { id: 'shiba',   name: '柴犬小學者 豆豆', icon: '🐕', desc: '忠誠愛動腦的金黃小柴犬', bodyColor: 0x4fc3f7, headColor: 0xf2b56b, earType: 'fox',     tailType: 'curled', snoutColor: 0xfff8e7 },
+  { id: 'bunny',   name: '粉耳小甜兔 朵朵', icon: '🐰', desc: '溫柔細心的長耳小白兔', bodyColor: 0xff8a65, headColor: 0xffffff, earType: 'bunny',   tailType: 'puff',   snoutColor: 0xffcdd2 },
+  { id: 'bear',    name: '奶油小棕熊 壯壯', icon: '🐻', desc: '穩重愛看書的森林小熊', bodyColor: 0xffd54f, headColor: 0xa1663b, earType: 'round',   tailType: 'puff',   snoutColor: 0xe6c39c },
+  { id: 'cat',     name: '奶油三花貓 喵喵', icon: '🐱', desc: '好奇心旺盛的靈巧小貓', bodyColor: 0xba68c8, headColor: 0xffe0b2, earType: 'cat',     tailType: 'long',   snoutColor: 0xffffff },
+  { id: 'panda',   name: '竹林小圓貓 團團', icon: '🐼', desc: '圓滾滾的超萌黑白大貓熊', bodyColor: 0x66bb6a, headColor: 0xffffff, earType: 'panda',   tailType: 'puff',   snoutColor: 0xffffff },
+  { id: 'koala',   name: '尤加利無尾熊 奇奇', icon: '🐨', desc: '大耳朵愛思考的灰藍無尾熊', bodyColor: 0xffb74d, headColor: 0x90a4ae, earType: 'koala',   tailType: 'puff',   snoutColor: 0x37474f },
+  { id: 'penguin', name: '極地小企鵝 噗噗', icon: '🐧', desc: '搖搖擺擺的冰雪小企鵝', bodyColor: 0xef5350, headColor: 0x37474f, earType: 'penguin', tailType: 'short',  snoutColor: 0xffca28 }
+];
 
 const SHOP = [
   { id:'leaf',   name:'嫩葉學童頭飾', icon:'🌱', cost:4,  type:'hat' },
@@ -213,8 +387,134 @@ const SHOP = [
   { id:'seeds',  name:'彩虹花圃種子', icon:'🌷', cost:12, type:'deco' },
 ];
 
+const $ = id => document.getElementById(id);
+
 /* =========================================================
- * 3. 音效與背景音樂（WebAudio 合成，免版權）
+ * 2. 家長 Gmail 帳號與兒童多組 Profile 獨立紀錄系統
+ * ========================================================= */
+const ACCOUNT_DB_KEY = 'learning-island-accounts-v3';
+
+function createDefaultChildProfile(name = '小小冒險家', grade = '5', avatarId = 'fox') {
+  return {
+    id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    name,
+    grade: String(grade),
+    avatarId,
+    stars: 0,
+    badges: {},       // { "5_chinese": true, ... }
+    owned: {},        // { leaf: true, ... }
+    equipped: null,
+    lessonsRead: {},  // { [unitId]: true }
+    unitStars: {},    // { [unitId]: 1|2|3 }
+    wrongBook: []     // [{ grade, subj, unitId, unitTitle, q, o, a, hint, explain }]
+  };
+}
+
+function loadAccountsDB() {
+  try {
+    const raw = localStorage.getItem(ACCOUNT_DB_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  // 預設內建示範帳號並遷移舊版紀錄
+  const oldV2 = JSON.parse(localStorage.getItem('learning-island-v2') || '{}');
+  const starterChild = createDefaultChildProfile('小宇（五年級）', '5', 'fox');
+  if (oldV2.stars) starterChild.stars = oldV2.stars;
+  if (oldV2.lessonsRead) starterChild.lessonsRead = oldV2.lessonsRead;
+  if (oldV2.unitStars) starterChild.unitStars = oldV2.unitStars;
+  if (oldV2.wrongBook) starterChild.wrongBook = oldV2.wrongBook;
+  if (oldV2.owned) starterChild.owned = oldV2.owned;
+  if (oldV2.equipped) starterChild.equipped = oldV2.equipped;
+  if (oldV2.badges) {
+    Object.keys(oldV2.badges).forEach(k => { starterChild.badges['5_' + k] = true; });
+  }
+  const secondChild = createDefaultChildProfile('朵朵（二年級）', '2', 'bunny');
+  return {
+    currentEmail: 'wadeyu@gmail.com',
+    accounts: {
+      'wadeyu@gmail.com': {
+        email: 'wadeyu@gmail.com',
+        pass: '1234',
+        activeProfileId: starterChild.id,
+        profiles: [starterChild, secondChild]
+      }
+    }
+  };
+}
+
+let db = loadAccountsDB();
+function saveDB() {
+  localStorage.setItem(ACCOUNT_DB_KEY, JSON.stringify(db));
+}
+
+function getCurrentAccount() {
+  const email = db.currentEmail || 'wadeyu@gmail.com';
+  if (!db.accounts[email]) {
+    const p = createDefaultChildProfile('小小冒險家', '5', 'fox');
+    db.accounts[email] = { email, pass: '1234', activeProfileId: p.id, profiles: [p] };
+  }
+  return db.accounts[email];
+}
+
+function getActiveProfile() {
+  const acc = getCurrentAccount();
+  let p = acc.profiles.find(x => x.id === acc.activeProfileId);
+  if (!p) {
+    p = acc.profiles[0] || createDefaultChildProfile('小小冒險家', '5', 'fox');
+    if (!acc.profiles.length) acc.profiles.push(p);
+    acc.activeProfileId = p.id;
+  }
+  return p;
+}
+
+// 讓現有邏輯無縫讀寫當前兒童的 Profile 狀態
+let state = getActiveProfile();
+const save = () => { saveDB(); };
+
+/* =========================================================
+ * 3. 動態取得當前「年級（1～6年級）」對應的大豐國小教材與題庫
+ * ========================================================= */
+const CURRICULUM_ALL = window.ISLAND_CURRICULUM_ALL;
+const SUBJECT_META = {
+  chinese: { npc:'貓頭鷹館長 歐文', face:'🦉', color:0xff8a65, defaultPlace:'國語營地・文學森林' },
+  math:    { npc:'柴犬學者 小八',   face:'🐕', color:0x6fb7ff, defaultPlace:'數學工坊・幾何積木島' },
+  english: { npc:'無尾熊老師 凱莉', face:'🐨', color:0xba68c8, defaultPlace:'英語村・國際冒險小鎮' },
+  science: { npc:'兔子博士 莉莉',   face:'🐰', color:0x7ed6b9, defaultPlace:'自然研究站・生態實驗室' },
+  social:  { npc:'浣熊船長 阿福',   face:'🦝', color:0xd9785a, defaultPlace:'社會歷史館・時光聚落' }
+};
+
+function getGradeSubjects(gradeStr = state.grade) {
+  const g = String(gradeStr || '5');
+  const gCfg = CURRICULUM_ALL.gradeConfig[g] || CURRICULUM_ALL.gradeConfig['5'];
+  const gData = CURRICULUM_ALL.grades[g] || CURRICULUM_ALL.grades['5'];
+  const res = {};
+  ['chinese', 'math', 'english', 'science', 'social'].forEach(key => {
+    const sMeta = SUBJECT_META[key];
+    const pubInfo = gCfg.subjects[key];
+    const sData = gData[key] || { units: [], pastExamLinks: [] };
+    if (!pubInfo && (!sData.units || !sData.units.length)) return; // 1~2年級無社會科
+    const pubLabel = pubInfo ? `${pubInfo.publisher}｜${pubInfo.book}` : '';
+    const placeName = pubInfo ? pubInfo.place : sMeta.defaultPlace;
+    res[key] = {
+      key,
+      npc: sMeta.npc,
+      face: sMeta.face,
+      color: sMeta.color,
+      publisher: pubInfo ? pubInfo.publisher : '',
+      book: pubInfo ? pubInfo.book : '',
+      pubLabel,
+      place: `${placeName}（${pubInfo ? pubInfo.publisher : ''}）`,
+      intro: `歡迎來到【${gCfg.name}・${placeName}】！本學期採用大豐國小指定版本「${pubLabel}」，先看老師整理的重點講義卡，再挑戰段考考古題吧！`,
+      units: sData.units || [],
+      pastExamLinks: sData.pastExamLinks || []
+    };
+  });
+  return res;
+}
+
+let SUBJECTS = getGradeSubjects(state.grade);
+
+/* =========================================================
+ * 4. 音效與背景音樂（WebAudio 合成，免版權）
  * ========================================================= */
 let actx, musicGain, musicOn = true, musicTimer;
 function initAudio() {
@@ -248,356 +548,715 @@ const sfx = {
   coin:  () => { const t = actx.currentTime; tone(987.77, t, .12, 'square', null, .12); tone(1318.5, t+.1, .3, 'square', null, .12); },
   wrong: () => { const t = actx.currentTime; tone(330, t, .2, 'triangle'); tone(262, t+.15, .3, 'triangle'); },
   badge: () => { const t = actx.currentTime; [523,659,784,1047].forEach((f,i)=>tone(f, t+i*.12, .4, 'triangle', null, .2)); },
-  talk:  () => { const t = actx.currentTime; tone(600 + Math.random()*300, t, .06, 'sine', null, .06); },
-  jump:  () => { const t = actx.currentTime; const o = actx.createOscillator(), g = actx.createGain();
-           o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(700,t+.15);
-           g.gain.setValueAtTime(.12,t); g.gain.exponentialRampToValueAtTime(.001,t+.2);
-           o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+.25); }
+  jump:  () => { const t = actx.currentTime; tone(440, t, .12); tone(660, t+.06, .15); },
+  talk:  () => { const t = actx.currentTime; tone(520+Math.random()*180, t, .08, 'sine', null, .15); }
 };
-const play = n => { if (actx) sfx[n](); };
+const play = k => { if (actx && sfx[k]) sfx[k](); };
 
 /* =========================================================
- * 4. Three.js 3D 島嶼場景
+ * 5. Three.js 3D 場景、五大學科地標與 8 種可換裝動物角色
  * ========================================================= */
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-document.getElementById('app').appendChild(renderer.domElement);
-
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x8fd3fe);
-scene.fog = new THREE.Fog(0x8fd3fe, 60, 140);
+scene.fog = new THREE.FogExp2(0xabe0ff, 0.0065);
 
-const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 300);
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 300);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xfff6dc, 0x7ed6b9, 0.9));
-const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-sun.position.set(30, 50, 20);
+scene.add(new THREE.HemisphereLight(0xfffbe6, 0x6ab04c, 0.85));
+const sun = new THREE.DirectionalLight(0xfff3d1, 1.15);
+sun.position.set(35, 55, 30);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-Object.assign(sun.shadow.camera, { left:-50, right:50, top:50, bottom:-50, near:1, far:150 });
-sun.shadow.bias = -0.0005;
+sun.shadow.mapSize.set(1024, 1024);
+const d = 58;
+Object.assign(sun.shadow.camera, { left:-d, right:d, top:d, bottom:-d, near:10, far:140 });
 scene.add(sun);
 
-const toon = (c, opts={}) => new THREE.MeshToonMaterial({ color:c, ...opts });
-const flat = (c) => new THREE.MeshStandardMaterial({ color:c, flatShading:true, roughness:.9 });
-function mesh(geo, mat, x=0, y=0, z=0, parent=scene) {
-  const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z);
-  m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
-}
+const mat = (color, flat=true) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, flatShading: flat });
+const mesh = (geo, c, shadow=true) => {
+  const m = new THREE.Mesh(geo, typeof c === 'number' ? mat(c) : c);
+  m.castShadow = shadow; m.receiveShadow = shadow; return m;
+};
 
-const ISLAND_R = 42;
-const island = new THREE.Group(); scene.add(island);
-mesh(new THREE.CylinderGeometry(ISLAND_R, ISLAND_R-2, 2, 40, 1), flat(0x8fd16f), 0, -1, 0, island);
-const rockGeo = new THREE.ConeGeometry(ISLAND_R-2, 22, 14, 3);
-rockGeo.attributes.position.array.forEach((v,i,arr)=>{ if (i%3!==1) arr[i] += (Math.random()-.5)*2.2; });
-rockGeo.computeVertexNormals();
-const rock = mesh(rockGeo, flat(0xa47551), 0, -13, 0, island); rock.rotation.x = Math.PI;
-const beach = mesh(new THREE.RingGeometry(ISLAND_R-3.5, ISLAND_R, 40), flat(0xf5e1a4), 0, 0.02, 0, island);
-beach.rotation.x = -Math.PI/2;
-const sea = mesh(new THREE.CircleGeometry(220, 48), new THREE.MeshStandardMaterial({ color:0x5ec4e8, transparent:true, opacity:.85 }), 0, -18, 0);
-sea.rotation.x = -Math.PI/2; sea.castShadow = false;
+// 海面與浮空島地形
+const sea = mesh(new THREE.CylinderGeometry(160, 160, 4, 48), mat(0x56b4e9, false), false);
+sea.position.y = -3.2; scene.add(sea);
 
-const pathMat = flat(0xd9b27c);
-function pathTo(x, z) {
-  const len = Math.hypot(x, z) - 6;
-  const p = mesh(new THREE.BoxGeometry(3, 0.05, len), pathMat, x/2*(len/(len+6))+x*0.06, 0.03, z/2*(len/(len+6))+z*0.06);
-  p.rotation.y = Math.atan2(x, z); p.castShadow = false;
-}
-mesh(new THREE.CylinderGeometry(6, 6, 0.06, 20), pathMat, 0, 0.03, 0).castShadow = false;
+const beach = mesh(new THREE.CylinderGeometry(52, 46, 5, 36), 0xf6e2b3);
+beach.position.y = -2.3; scene.add(beach);
 
-const colliders = [];
-const trees = [];
-function tree(x, z, s=1) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); scene.add(g);
-  mesh(new THREE.CylinderGeometry(.35,.5,2.2,6), flat(0x8b5a3c), 0, 1.1, 0, g);
-  const leafCol = [0x5cb85c,0x6cc46a,0x4fa86b][Math.floor(Math.random()*3)];
-  mesh(new THREE.IcosahedronGeometry(1.7, 0), flat(leafCol), 0, 3.2, 0, g);
-  mesh(new THREE.IcosahedronGeometry(1.2, 0), flat(leafCol), .6, 4.3, .2, g);
-  colliders.push({ x, z, r: .9*s });
-  g.userData.sway = Math.random()*Math.PI*2; trees.push(g);
-}
-function flower(x, z, col) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
-  mesh(new THREE.CylinderGeometry(.04,.04,.5,4), flat(0x4caf50), 0, .25, 0, g);
-  mesh(new THREE.IcosahedronGeometry(.18,0), flat(col), 0, .55, 0, g);
-  return g;
-}
-const FLOWER_COLS = [0xff8a65, 0xffd54f, 0xf48fb1, 0xffffff, 0xba68c8];
+const grass = mesh(new THREE.CylinderGeometry(47, 44, 2.4, 36), 0x88d47e);
+grass.position.y = -1.0; scene.add(grass);
 
-const npcs = [];
-function makeAnimal(bodyCol, earType='round') {
-  const g = new THREE.Group();
-  mesh(new THREE.CapsuleGeometry(.55, .6, 4, 8), toon(bodyCol), 0, .95, 0, g);
-  const head = mesh(new THREE.SphereGeometry(.62, 12, 10), toon(bodyCol), 0, 2.0, 0, g);
-  mesh(new THREE.SphereGeometry(.09, 8, 6), toon(0x222222), -.22, 2.08, .55, g);
-  mesh(new THREE.SphereGeometry(.09, 8, 6), toon(0x222222),  .22, 2.08, .55, g);
-  mesh(new THREE.SphereGeometry(.12, 8, 6), toon(0xff9e9e), -.36, 1.9, .48, g);
-  mesh(new THREE.SphereGeometry(.12, 8, 6), toon(0xff9e9e),  .36, 1.9, .48, g);
-  const earGeo = earType==='long' ? new THREE.CapsuleGeometry(.12,.7,4,6)
-               : earType==='tri'  ? new THREE.ConeGeometry(.22,.45,4)
-               : new THREE.SphereGeometry(.2,8,6);
-  const ey = earType==='long' ? 2.85 : 2.55;
-  mesh(earGeo, toon(bodyCol), -.35, ey, 0, g).rotation.z = .2;
-  mesh(earGeo, toon(bodyCol),  .35, ey, 0, g).rotation.z = -.2;
-  g.userData.head = head;
-  return g;
-}
-
-const LANDMARKS = [
-  { key:'chinese', x:-22, z:-18 },
-  { key:'math',    x: 22, z:-18 },
-  { key:'science', x: 22, z: 18 },
-  { key:'social',  x:-22, z: 18 },
+// 5 條放射狀步道通往 5 大學科地標
+const LANDMARK_COORDS = [
+  { key: 'chinese', x: -24, z: -20 },
+  { key: 'math',    x:  24, z: -20 },
+  { key: 'english', x:   0, z: -30 },
+  { key: 'science', x: -24, z:  20 },
+  { key: 'social',  x:  24, z:  20 }
 ];
 
-function buildChinese(g) {
-  mesh(new THREE.CylinderGeometry(1.2,1.6,7,7), flat(0x8b5a3c), 0, 3.5, -2, g);
-  mesh(new THREE.IcosahedronGeometry(4, 0), flat(0x5cb85c), 0, 8.5, -2, g);
-  mesh(new THREE.BoxGeometry(4,2.6,3.4), flat(0xc98b5a), 0, 6.2, -2, g);
-  mesh(new THREE.ConeGeometry(3.2, 2, 4), flat(0xff8a65), 0, 8.4, -2, g).rotation.y = Math.PI/4;
-  const bookL = mesh(new THREE.BoxGeometry(3.4,.4,4.4), flat(0xff8a65), -1.8, .9, 2.5, g); bookL.rotation.z = .25;
-  const bookR = mesh(new THREE.BoxGeometry(3.4,.4,4.4), flat(0xff8a65),  1.8, .9, 2.5, g); bookR.rotation.z = -.25;
-  const pL = mesh(new THREE.BoxGeometry(3.1,.2,4.0), flat(0xfffaf0), -1.75, 1.15, 2.5, g); pL.rotation.z = .25;
-  const pR = mesh(new THREE.BoxGeometry(3.1,.2,4.0), flat(0xfffaf0),  1.75, 1.15, 2.5, g); pR.rotation.z = -.25;
-  return 5;
-}
-function buildMath(g) {
-  mesh(new THREE.BoxGeometry(5,3,5), flat(0x6fb7ff), 0, 1.5, -1, g);
-  mesh(new THREE.CylinderGeometry(1.4,1.4,3,12), flat(0xffd54f), -2.2, 4.5, -1, g);
-  mesh(new THREE.BoxGeometry(2.4,2.4,2.4), flat(0xff8a65), 1.6, 4.2, -.2, g);
-  mesh(new THREE.ConeGeometry(1.6, 2.4, 4), flat(0x7ed6b9), 1.6, 6.6, -.2, g).rotation.y = Math.PI/4;
-  const gear = new THREE.Group(); gear.position.set(0, 5, 1.6); g.add(gear);
-  mesh(new THREE.CylinderGeometry(1.3,1.3,.4,16), flat(0xb0bec5), 0,0,0, gear).rotation.x = Math.PI/2;
-  for (let i=0;i<10;i++){ const t = mesh(new THREE.BoxGeometry(.4,.5,.4), flat(0xb0bec5), Math.cos(i/10*Math.PI*2)*1.5, Math.sin(i/10*Math.PI*2)*1.5, 0, gear); t.rotation.z = i/10*Math.PI*2; }
-  g.userData.spin = gear;
-  return 4.8;
-}
-function buildScience(g) {
-  mesh(new THREE.CylinderGeometry(4.2,4.4,1,16), flat(0xeeeeee), 0, .5, -1, g);
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(4, 16, 10, 0, Math.PI*2, 0, Math.PI/2),
-    new THREE.MeshPhysicalMaterial({ color:0xbff3ff, transparent:true, opacity:.35, roughness:.05, flatShading:true }));
-  dome.position.set(0,1,-1); g.add(dome);
-  for (let i=0;i<5;i++) mesh(new THREE.IcosahedronGeometry(.8,0), flat(0x4caf50), Math.cos(i*1.3)*2, 1.8, -1+Math.sin(i*1.3)*2, g);
-  const tel = new THREE.Group(); tel.position.set(3.4, 1, 2.4); g.add(tel);
-  mesh(new THREE.CylinderGeometry(.08,.08,1.6,5), flat(0x555555), 0, .8, 0, tel);
-  const tube = mesh(new THREE.CylinderGeometry(.25,.35,2,10), flat(0x3f51b5), 0, 1.9, 0, tel); tube.rotation.x = -.8;
-  return 5;
-}
-function buildSocial(g) {
-  mesh(new THREE.BoxGeometry(6,2.6,3.6), flat(0xc0573e), 0, 1.3, -1.5, g);
-  const roof = mesh(new THREE.CylinderGeometry(.1, 4.2, 1.8, 4, 1), flat(0x6d4c41), 0, 3.5, -1.5, g);
-  roof.rotation.y = Math.PI/4; roof.scale.set(1.1,1,.7);
-  mesh(new THREE.BoxGeometry(1.2,1.8,.2), flat(0x5d4037), 0, .9, .35, g);
-  mesh(new THREE.ConeGeometry(.25,1.2,4), flat(0x6d4c41), -3, 4.3, -1.5, g).rotation.z = .8;
-  mesh(new THREE.ConeGeometry(.25,1.2,4), flat(0x6d4c41),  3, 4.3, -1.5, g).rotation.z = -.8;
-  mesh(new THREE.CylinderGeometry(.12,.12,2,6), flat(0x8b5a3c), 3.6, 1, 2.4, g);
-  const map = mesh(new THREE.BoxGeometry(1.8,1.2,.08), flat(0xf3e0b5), 3.6, 2.2, 2.4, g); map.rotation.y = -.5;
-  const boat = new THREE.Group(); boat.position.set(-3.6, 0, 2.6); g.add(boat);
-  mesh(new THREE.BoxGeometry(1.8,.5,.8), flat(0x8b5a3c), 0, .25, 0, boat);
-  mesh(new THREE.CylinderGeometry(.05,.05,1.8,4), flat(0x5d4037), 0, 1.3, 0, boat);
-  mesh(new THREE.ConeGeometry(.6,1.3,3), flat(0xffffff), .3, 1.4, 0, boat).rotation.z = -Math.PI/2;
-  return 5;
-}
-const BUILDERS = { chinese:buildChinese, math:buildMath, science:buildScience, social:buildSocial };
-const NPC_LOOK = { chinese:[0xa1887f,'tri'], math:[0xf0b46a,'tri'], science:[0xffffff,'long'], social:[0x9e9e9e,'round'] };
+const centerPlaza = mesh(new THREE.CylinderGeometry(6.5, 6.5, 0.14, 24), 0xe8cfa1, false);
+centerPlaza.position.y = 0.21; scene.add(centerPlaza);
 
-function makeSignTexture(text) {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 104;
-  const x = c.getContext('2d');
-  x.fillStyle = '#e6b77e'; x.fillRect(0,0,256,104);
-  x.fillStyle = '#5a3d22'; x.font = '900 44px "Zen Maru Gothic", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillText(text, 128, 54);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-}
-
-LANDMARKS.forEach(L => {
-  const g = new THREE.Group(); g.position.set(L.x, 0, L.z);
-  g.rotation.y = Math.atan2(-L.x, -L.z);
-  scene.add(g);
-  const r = BUILDERS[L.key](g);
-  colliders.push({ x:L.x, z:L.z, r });
-  L.group = g;
-  pathTo(L.x, L.z);
-  const dir = new THREE.Vector3(-L.x, 0, -L.z).normalize();
-  const [col, ear] = NPC_LOOK[L.key];
-  const npc = makeAnimal(col, ear);
-  npc.position.set(L.x + dir.x*7.5, 0, L.z + dir.z*7.5);
-  npc.rotation.y = Math.atan2(dir.x, dir.z);
-  scene.add(npc);
-  colliders.push({ x:npc.position.x, z:npc.position.z, r:.8 });
-  const marker = mesh(new THREE.OctahedronGeometry(.35,0), toon(SUBJECTS[L.key].color, { emissive:SUBJECTS[L.key].color, emissiveIntensity:.4 }), 0, 3.4, 0, npc);
-  npcs.push({ key:L.key, obj:npc, marker });
-  const sign = new THREE.Group(); sign.position.set(L.x + dir.x*10 + dir.z*2.5, 0, L.z + dir.z*10 - dir.x*2.5); sign.rotation.y = npc.rotation.y; scene.add(sign);
-  mesh(new THREE.BoxGeometry(.15,1.4,.15), flat(0x8b5a3c), 0,.7,0, sign);
-  const tex = makeSignTexture(SUBJECTS[L.key].place.split('・')[0]);
-  const board = new THREE.Mesh(new THREE.BoxGeometry(2.2,.9,.12), [flat(0xc98b5a),flat(0xc98b5a),flat(0xc98b5a),flat(0xc98b5a), new THREE.MeshStandardMaterial({ map:tex }), flat(0xc98b5a)]);
-  board.position.y = 1.5; board.castShadow = true; sign.add(board);
+LANDMARK_COORDS.forEach(coord => {
+  const dist = Math.hypot(coord.x, coord.z);
+  const road = mesh(new THREE.BoxGeometry(3.4, 0.12, dist), 0xe8cfa1, false);
+  road.position.set(coord.x / 2, 0.2, coord.z / 2);
+  road.rotation.y = Math.atan2(coord.x, coord.z);
+  scene.add(road);
 });
 
-(() => {
-  const g = new THREE.Group(); g.position.set(0, 0, -30); scene.add(g);
-  mesh(new THREE.BoxGeometry(5,3,4), flat(0xd9a066), 0,1.5,0, g);
-  mesh(new THREE.ConeGeometry(4,2.2,4), flat(0x7ed6b9), 0,4.1,0, g).rotation.y = Math.PI/4;
-  mesh(new THREE.BoxGeometry(1,1.8,.1), flat(0x7a5a3a), 0,.9,2.02, g);
-  colliders.push({ x:0, z:-30, r:3.2 });
-})();
+const colliders = [];
+const addCollider = (x, z, r) => colliders.push({ x, z, r });
 
-function farFromAll(x, z, minD) {
-  if (Math.hypot(x,z) < 9) return false;
-  for (const c of colliders) if (Math.hypot(x-c.x, z-c.z) < c.r + minD) return false;
-  for (const L of LANDMARKS) {
-    const t = Math.max(0, Math.min(1, (x*L.x + z*L.z)/(L.x*L.x + L.z*L.z)));
-    if (Math.hypot(x - L.x*t, z - L.z*t) < 3) return false;
-  }
-  return true;
+/* =========================================================
+ * 6. 五大主科特色 3D 地標建築
+ * ========================================================= */
+function buildChineseCamp() {
+  const g = new THREE.Group();
+  const trunk = mesh(new THREE.CylinderGeometry(3.2, 4.0, 5.5, 9), 0x9c6b43);
+  trunk.position.y = 2.75; g.add(trunk);
+  const roof = mesh(new THREE.ConeGeometry(5.6, 4.2, 8), 0x5bbd72);
+  roof.position.y = 6.8; g.add(roof);
+  const book = mesh(new THREE.BoxGeometry(3.4, 2.2, 0.5), 0xff8a65);
+  book.position.set(0, 3.8, 3.3); g.add(book);
+  const page = mesh(new THREE.BoxGeometry(3.0, 1.9, 0.55), 0xfff9e6);
+  page.position.set(0, 3.8, 3.32); g.add(page);
+  const door = mesh(new THREE.BoxGeometry(1.5, 2.3, 0.3), 0x5c3a1e);
+  door.position.set(0, 1.3, 3.15); g.add(door);
+  g.position.set(-24, 0.2, -20);
+  addCollider(-24, -20, 4.5);
+  return g;
 }
-for (let i=0, n=0; i<400 && n<38; i++) {
-  const a = Math.random()*Math.PI*2, d = 10 + Math.random()*(ISLAND_R-15);
-  const x = Math.cos(a)*d, z = Math.sin(a)*d;
-  if (farFromAll(x, z, 2)) { tree(x, z, .8 + Math.random()*.6); n++; }
+
+function buildMathWorkshop() {
+  const g = new THREE.Group();
+  const base = mesh(new THREE.BoxGeometry(6.5, 3.6, 5.5), 0xffd54f);
+  base.position.y = 1.8; g.add(base);
+  const tower = mesh(new THREE.CylinderGeometry(1.8, 1.8, 5.8, 12), 0x6fb7ff);
+  tower.position.set(-2.2, 2.9, -1.2); g.add(tower);
+  const cone = mesh(new THREE.ConeGeometry(2.3, 2.4, 12), 0xff8a65);
+  cone.position.set(-2.2, 6.9, -1.2); g.add(cone);
+  const gear = mesh(new THREE.TorusGeometry(1.5, 0.38, 8, 12), 0xff7043);
+  gear.position.set(1.3, 3.6, 2.9);
+  g.userData.spin = gear; g.add(gear);
+  g.position.set(24, 0.2, -20);
+  addCollider(24, -20, 4.6);
+  return g;
 }
-for (let i=0;i<120;i++) {
-  const a = Math.random()*Math.PI*2, d = 7 + Math.random()*(ISLAND_R-11);
-  flower(Math.cos(a)*d, Math.sin(a)*d, FLOWER_COLS[i%FLOWER_COLS.length]);
+
+function buildEnglishVillage() {
+  const g = new THREE.Group();
+  // 歐風鐘塔雙層小屋 + ABC 積木招牌
+  const hall = mesh(new THREE.BoxGeometry(6.2, 3.6, 5.2), 0xf3e5f5);
+  hall.position.y = 1.8; g.add(hall);
+  const roof = mesh(new THREE.ConeGeometry(5.2, 3.0, 4), 0x9c27b0);
+  roof.position.y = 5.1; roof.rotation.y = Math.PI / 4; g.add(roof);
+  const clockTower = mesh(new THREE.BoxGeometry(2.2, 6.5, 2.2), 0xffe082);
+  clockTower.position.set(2.4, 3.25, -1.2); g.add(clockTower);
+  const spire = mesh(new THREE.ConeGeometry(1.8, 2.5, 4), 0x7b1fa2);
+  spire.position.set(2.4, 7.7, -1.2); spire.rotation.y = Math.PI / 4; g.add(spire);
+  const clockFace = mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.2, 16), 0xffffff);
+  clockFace.rotation.x = Math.PI / 2; clockFace.position.set(2.4, 5.2, -0.05); g.add(clockFace);
+  g.position.set(0, 0.2, -30);
+  addCollider(0, -30, 4.5);
+  return g;
 }
-const bonusFlowers = new THREE.Group(); scene.add(bonusFlowers);
+
+function buildScienceStation() {
+  const g = new THREE.Group();
+  const ring = mesh(new THREE.CylinderGeometry(4.6, 5.0, 1.6, 16), 0xe8f8f2);
+  ring.position.y = 0.8; g.add(ring);
+  const domeMat = new THREE.MeshStandardMaterial({ color: 0x9be7ff, transparent: true, opacity: 0.62, roughness: 0.2, flatShading: true });
+  const dome = mesh(new THREE.SphereGeometry(4.4, 14, 10, 0, Math.PI*2, 0, Math.PI/2), domeMat, false);
+  dome.position.y = 1.5; g.add(dome);
+  const innerTree = mesh(new THREE.ConeGeometry(1.8, 3.2, 7), 0x4cd195);
+  innerTree.position.y = 2.6; g.add(innerTree);
+  const scope = mesh(new THREE.CylinderGeometry(0.45, 0.65, 3.2, 10), 0xffb74d);
+  scope.position.set(2.2, 4.5, 0); scope.rotation.z = -0.6; g.add(scope);
+  g.position.set(-24, 0.2, 20);
+  addCollider(-24, 20, 4.8);
+  return g;
+}
+
+function buildSocialMuseum() {
+  const g = new THREE.Group();
+  const wall = mesh(new THREE.BoxGeometry(6.8, 3.2, 4.8), 0xd96b43);
+  wall.position.y = 1.6; g.add(wall);
+  const roof = mesh(new THREE.BoxGeometry(7.8, 0.9, 5.6), 0x8d3b24);
+  roof.position.y = 3.5; g.add(roof);
+  const ridge = mesh(new THREE.BoxGeometry(8.4, 0.45, 1.2), 0xf4b942);
+  ridge.position.y = 4.15; g.add(ridge);
+  [-2.2, 2.2].forEach(x => {
+    const p = mesh(new THREE.CylinderGeometry(0.32, 0.32, 3.2, 8), 0x7a2e1d);
+    p.position.set(x, 1.6, 2.6); g.add(p);
+  });
+  g.position.set(24, 0.2, 20);
+  addCollider(24, 20, 4.8);
+  return g;
+}
+
+const socialMuseumGroup = buildSocialMuseum();
+const LANDMARKS = [
+  { key:'chinese', group: buildChineseCamp(),    npcPos:[-18, -14] },
+  { key:'math',    group: buildMathWorkshop(),   npcPos:[ 18, -14] },
+  { key:'english', group: buildEnglishVillage(), npcPos:[  0, -23] },
+  { key:'science', group: buildScienceStation(), npcPos:[-18,  14] },
+  { key:'social',  group: socialMuseumGroup,     npcPos:[ 18,  14] },
+];
+LANDMARKS.forEach(l => scene.add(l.group));
+
+// 低多邊形樹木、花朵、雲朵
+const trees = [];
+function addTree(x, z, s=1) {
+  const g = new THREE.Group();
+  const t = mesh(new THREE.CylinderGeometry(0.35*s, 0.5*s, 1.8*s, 6), 0x8d5a36);
+  t.position.y = 0.9*s; g.add(t);
+  const c1 = mesh(new THREE.IcosahedronGeometry(1.5*s, 0), 0x5ec576);
+  c1.position.y = 2.4*s; g.add(c1);
+  const c2 = mesh(new THREE.IcosahedronGeometry(1.1*s, 0), 0x7be08f);
+  c2.position.set(0.4*s, 3.3*s, 0.2*s); g.add(c2);
+  g.position.set(x, 0.2, z);
+  g.userData.sway = Math.random()*Math.PI*2;
+  scene.add(g); trees.push(g); addCollider(x, z, 0.9*s);
+}
+[[-10,-26],[10,-26],[-33,-6],[-35,8],[33,-6],[35,8],[-11,29],[11,29],[-30,-30],[30,-30],[-30,30],[30,30]]
+  .forEach(([x,z],i) => addTree(x, z, 0.9 + (i%3)*0.2));
+
+const flowerColors = [0xff8a65, 0xffd54f, 0xf48fb1, 0xba68c8, 0xffffff];
+function addFlower(x, z, c) {
+  const f = mesh(new THREE.SphereGeometry(0.24, 6, 6), c, false);
+  f.position.set(x, 0.32, z); scene.add(f);
+}
+for (let i = 0; i < 40; i++) {
+  const a = Math.random()*Math.PI*2, r = 7 + Math.random()*33;
+  addFlower(Math.cos(a)*r, Math.sin(a)*r, flowerColors[i % flowerColors.length]);
+}
+let bonusFlowersBuilt = false;
 function buildBonusFlowers() {
-  if (bonusFlowers.children.length) return;
-  for (let i=0;i<60;i++) {
-    const a = i/60*Math.PI*2, d = 5 + (i%3)*.5;
-    const f = flower(Math.cos(a)*d, Math.sin(a)*d, FLOWER_COLS[i%FLOWER_COLS.length]);
-    scene.remove(f); bonusFlowers.add(f); f.scale.setScalar(1.6);
+  if (bonusFlowersBuilt) return; bonusFlowersBuilt = true;
+  for (let i = 0; i < 24; i++) {
+    const a = (i/24)*Math.PI*2;
+    addFlower(Math.cos(a)*5.5, Math.sin(a)*5.5, flowerColors[i % flowerColors.length]);
   }
 }
 
 const clouds = [];
-for (let i=0;i<10;i++) {
-  const g = new THREE.Group();
-  for (let j=0;j<4;j++) mesh(new THREE.IcosahedronGeometry(2+Math.random()*1.5,0), new THREE.MeshStandardMaterial({ color:0xffffff, flatShading:true }), j*2.2, Math.random(), Math.random(), g).castShadow = false;
-  g.position.set((Math.random()-.5)*160, 18+Math.random()*10, (Math.random()-.5)*160);
-  scene.add(g); clouds.push(g);
+for (let i = 0; i < 8; i++) {
+  const cg = new THREE.Group();
+  [-1.2, 0, 1.2].forEach((ox, j) => {
+    const p = mesh(new THREE.DodecahedronGeometry(j===1?1.8:1.3, 0), mat(0xffffff), false);
+    p.position.set(ox, j===1?0.3:0, 0); cg.add(p);
+  });
+  cg.position.set((Math.random()-0.5)*110, 22 + Math.random()*8, (Math.random()-0.5)*90);
+  scene.add(cg); clouds.push(cg);
 }
 
+// 5 位學科地標 NPC
+const npcs = [];
+function makeCharMesh(bodyColor, headColor) {
+  const g = new THREE.Group();
+  const body = mesh(new THREE.CylinderGeometry(0.55, 0.7, 1.2, 10), bodyColor);
+  body.position.y = 0.8; g.add(body);
+  const head = mesh(new THREE.SphereGeometry(0.68, 12, 10), headColor);
+  head.position.y = 1.9; g.add(head);
+  [-0.35, 0.35].forEach(x => {
+    const ear = mesh(new THREE.ConeGeometry(0.24, 0.5, 6), headColor);
+    ear.position.set(x, 2.55, 0); g.add(ear);
+  });
+  [-0.22, 0.22].forEach(x => {
+    const eye = mesh(new THREE.SphereGeometry(0.09, 6, 6), 0x2d1e12, false);
+    eye.position.set(x, 1.98, 0.6); g.add(eye);
+  });
+  return g;
+}
+
+LANDMARKS.forEach(L => {
+  const sMeta = SUBJECT_META[L.key];
+  const n = makeCharMesh(sMeta.color, 0xfff3d6);
+  n.position.set(L.npcPos[0], 0.2, L.npcPos[1]);
+  const marker = mesh(new THREE.OctahedronGeometry(0.35, 0), 0xffeb3b, false);
+  marker.position.y = 3.4; n.add(marker);
+  scene.add(n);
+  npcs.push({ key: L.key, obj: n, marker, x: L.npcPos[0], z: L.npcPos[1] });
+  addCollider(L.npcPos[0], L.npcPos[1], 0.9);
+});
+
 /* =========================================================
- * 5. 玩家角色 + 第三人稱控制器 + 地標傳送
+ * 7. 玩家 3D 動物角色建構器（支援 8 種動物即時切換造型！）
  * ========================================================= */
-const player = makeAnimal(0xffcc80, 'round');
-mesh(new THREE.BoxGeometry(.7,.7,.35), toon(0xff8a65), 0, 1.1, -.6, player);
+const player = new THREE.Group();
+player.position.set(0, 0.2, 4);
 scene.add(player);
-player.position.set(0, 0, 4);
-const hatSlot = new THREE.Group(); hatSlot.position.y = 2.55; player.add(hatSlot);
+
+const hatSlot = new THREE.Group();
+hatSlot.position.y = 2.62;
+
+function rebuildPlayerAvatar(avatarId = state.avatarId) {
+  const spec = AVATARS.find(a => a.id === avatarId) || AVATARS[0];
+  // 清除舊模型（保留 hatSlot）
+  while (player.children.length > 0) {
+    player.remove(player.children[0]);
+  }
+
+  // 身體與四肢
+  const body = mesh(new THREE.CylinderGeometry(0.56, 0.72, 1.22, 12), spec.bodyColor);
+  body.position.y = 0.8; player.add(body);
+
+  // 白色肚皮裝飾
+  const belly = mesh(new THREE.CylinderGeometry(0.42, 0.52, 0.95, 10), 0xfffdf7);
+  belly.position.set(0, 0.8, 0.22); player.add(belly);
+
+  // 頭部
+  const head = mesh(new THREE.SphereGeometry(0.7, 14, 12), spec.headColor);
+  head.position.y = 1.92; player.add(head);
+
+  // 鼻子與吻部
+  const snout = mesh(new THREE.SphereGeometry(0.25, 10, 8), spec.snoutColor);
+  snout.scale.set(1.1, 0.8, 1.1);
+  snout.position.set(0, 1.82, 0.6); player.add(snout);
+
+  const noseTip = mesh(new THREE.SphereGeometry(0.09, 8, 8), spec.earType === 'penguin' ? 0xff8f00 : 0x3e2723);
+  noseTip.position.set(0, 1.88, 0.82); player.add(noseTip);
+
+  // 眼睛（大貓熊加上黑眼圈！）
+  if (spec.earType === 'panda') {
+    [-0.24, 0.24].forEach(x => {
+      const patch = mesh(new THREE.SphereGeometry(0.18, 8, 8), 0x212121, false);
+      patch.scale.set(1, 1.2, 0.5);
+      patch.position.set(x, 1.98, 0.56); player.add(patch);
+    });
+  }
+  [-0.23, 0.23].forEach(x => {
+    const eye = mesh(new THREE.SphereGeometry(0.09, 8, 8), 0x1f1610, false);
+    eye.position.set(x, 1.98, 0.64); player.add(eye);
+  });
+
+  // 依 8 種動物特徵打造專屬耳朵
+  if (spec.earType === 'bunny') {
+    [-0.28, 0.28].forEach(x => {
+      const ear = mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.95, 10), spec.headColor);
+      ear.position.set(x, 2.85, 0); player.add(ear);
+      const inner = mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.75, 8), 0xffcdd2);
+      inner.position.set(x, 2.85, 0.08); player.add(inner);
+    });
+  } else if (spec.earType === 'round' || spec.earType === 'panda') {
+    const eColor = spec.earType === 'panda' ? 0x212121 : spec.headColor;
+    [-0.45, 0.45].forEach(x => {
+      const ear = mesh(new THREE.SphereGeometry(0.24, 10, 10), eColor);
+      ear.position.set(x, 2.48, 0); player.add(ear);
+    });
+  } else if (spec.earType === 'koala') {
+    [-0.58, 0.58].forEach(x => {
+      const ear = mesh(new THREE.SphereGeometry(0.34, 10, 10), spec.headColor);
+      ear.position.set(x, 2.32, 0); player.add(ear);
+    });
+  } else if (spec.earType === 'penguin') {
+    // 企鵝小翅膀
+    [-0.68, 0.68].forEach(x => {
+      const wing = mesh(new THREE.BoxGeometry(0.18, 0.8, 0.35), spec.headColor);
+      wing.position.set(x, 0.85, 0); player.add(wing);
+    });
+  } else {
+    // 狐狸、柴犬、貓咪尖耳
+    [-0.36, 0.36].forEach(x => {
+      const ear = mesh(new THREE.ConeGeometry(0.26, 0.56, 8), spec.headColor);
+      ear.position.set(x, 2.56, 0); player.add(ear);
+    });
+  }
+
+  // 尾巴造型
+  if (spec.tailType === 'bushy') {
+    const tail = mesh(new THREE.ConeGeometry(0.28, 0.9, 8), spec.headColor);
+    tail.position.set(0, 0.65, -0.75); tail.rotation.x = -0.8; player.add(tail);
+  } else if (spec.tailType === 'curled') {
+    const tail = mesh(new THREE.TorusGeometry(0.22, 0.1, 8, 12, Math.PI * 1.3), spec.headColor);
+    tail.position.set(0, 0.85, -0.65); tail.rotation.y = Math.PI / 2; player.add(tail);
+  } else if (spec.tailType === 'long') {
+    const tail = mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.95, 8), spec.headColor);
+    tail.position.set(0, 0.75, -0.7); tail.rotation.x = -0.6; player.add(tail);
+  } else {
+    const tail = mesh(new THREE.SphereGeometry(0.2, 8, 8), spec.headColor);
+    tail.position.set(0, 0.55, -0.68); player.add(tail);
+  }
+
+  player.add(hatSlot);
+  applyHat();
+}
 
 function applyHat() {
   hatSlot.clear();
-  const id = state.equipped;
-  if (id === 'straw') {
-    mesh(new THREE.CylinderGeometry(.95,.95,.06,16), flat(0xf3d27a), 0,0,0, hatSlot);
-    mesh(new THREE.CylinderGeometry(.45,.5,.4,12), flat(0xf3d27a), 0,.2,0, hatSlot);
-    mesh(new THREE.CylinderGeometry(.51,.51,.1,12), flat(0xff8a65), 0,.08,0, hatSlot);
-  } else if (id === 'crown') {
-    mesh(new THREE.CylinderGeometry(.42,.42,.3,8,1,true), flat(0xffd54f), 0,.1,0, hatSlot);
-    for (let i=0;i<5;i++) mesh(new THREE.ConeGeometry(.1,.3,4), flat(0xffd54f), Math.cos(i/5*Math.PI*2)*.4, .38, Math.sin(i/5*Math.PI*2)*.4, hatSlot);
-  } else if (id === 'leaf') {
-    mesh(new THREE.CylinderGeometry(.03,.03,.3,4), flat(0x4caf50), 0,.12,0, hatSlot);
-    const l1 = mesh(new THREE.SphereGeometry(.18,6,4), flat(0x7ed957), -.14,.3,0, hatSlot); l1.scale.set(1.4,.4,.8);
-    const l2 = mesh(new THREE.SphereGeometry(.18,6,4), flat(0x7ed957),  .14,.3,0, hatSlot); l2.scale.set(1.4,.4,.8);
+  if (state.equipped === 'leaf') {
+    const stem = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 6), 0x4caf50);
+    const leaf = mesh(new THREE.SphereGeometry(0.22, 8, 6), 0x66bb6a);
+    leaf.scale.set(1.4, 0.4, 0.8); leaf.position.set(0.18, 0.2, 0);
+    hatSlot.add(stem, leaf);
+  } else if (state.equipped === 'straw') {
+    const brim = mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.1, 14), 0xf5d77f);
+    const top  = mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.4, 14), 0xf5d77f);
+    top.position.y = 0.22; hatSlot.add(brim, top);
+  } else if (state.equipped === 'crown') {
+    const c = mesh(new THREE.CylinderGeometry(0.5, 0.42, 0.42, 6), 0xffd700);
+    c.position.y = 0.15; hatSlot.add(c);
   }
-}
-
-function teleportTo(key) {
-  initAudio();
-  const n = npcs.find(x => x.key === key);
-  if (!n) return;
-  const dir = new THREE.Vector3(n.obj.position.x, 0, n.obj.position.z).normalize();
-  player.position.set(n.obj.position.x - dir.x*2.6, 0, n.obj.position.z - dir.z*2.6);
-  player.rotation.y = Math.atan2(dir.x, dir.z);
-  document.querySelectorAll('.tp-btn').forEach(b => b.classList.toggle('active-border', b.dataset.tp === key));
-  nearestNpc = n;
-  openSubjectHub(key);
-}
-document.querySelectorAll('.tp-btn').forEach(b => b.onclick = () => teleportTo(b.dataset.tp));
-
-const keys = {};
-let uiOpen = false;
-addEventListener('keydown', e => {
-  if (uiOpen) { if (e.key === 'Escape') closeAll(); return; }
-  keys[e.code] = true;
-  if (e.code === 'Space') { e.preventDefault(); jump(); }
-  if (e.code === 'KeyE') tryInteract();
-  if (e.code === 'KeyB') openBag();
-  if (e.code === 'KeyN') openNotebook('chinese');
-});
-addEventListener('keyup', e => keys[e.code] = false);
-
-const vel = new THREE.Vector3();
-let vy = 0, grounded = true, camYaw = Math.PI, walkT = 0;
-function jump() { if (grounded) { vy = 9; grounded = false; play('jump'); } }
-
-let dragging = false, lastX = 0;
-renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; });
-addEventListener('pointerup', () => dragging = false);
-addEventListener('pointermove', e => { if (dragging) { camYaw -= (e.clientX - lastX) * 0.005; lastX = e.clientX; } });
-
-const camPos = new THREE.Vector3(0, 10, 18), camLook = new THREE.Vector3();
-let nearestNpc = null;
-
-function updatePlayer(dt) {
-  const f = (keys.KeyW||keys.ArrowUp?1:0) - (keys.KeyS||keys.ArrowDown?1:0);
-  const s = (keys.KeyD||keys.ArrowRight?1:0) - (keys.KeyA||keys.ArrowLeft?1:0);
-  const fwd = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
-  const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
-  const wish = fwd.multiplyScalar(f).add(right.multiplyScalar(s));
-  const speed = 9;
-  if (wish.lengthSq() > 0) {
-    wish.normalize();
-    vel.lerp(wish.multiplyScalar(speed), 1 - Math.exp(-12*dt));
-    const targetRot = Math.atan2(vel.x, vel.z);
-    let d = targetRot - player.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
-    player.rotation.y += d * Math.min(1, dt*12);
-    walkT += dt * 12;
-  } else {
-    vel.lerp(new THREE.Vector3(), 1 - Math.exp(-10*dt));
-    walkT = 0;
-  }
-  const p = player.position;
-  p.x += vel.x*dt; p.z += vel.z*dt;
-  for (const c of colliders) {
-    const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), min = c.r + .6;
-    if (d < min && d > 0.0001) { p.x = c.x + dx/d*min; p.z = c.z + dz/d*min; }
-  }
-  const dist = Math.hypot(p.x, p.z), lim = ISLAND_R - 1.5;
-  if (dist > lim) { p.x *= lim/dist; p.z *= lim/dist; }
-  vy -= 25*dt; p.y += vy*dt;
-  if (p.y <= 0) { p.y = 0; vy = 0; grounded = true; }
-  player.children[0].position.y = .95 + Math.abs(Math.sin(walkT))*.12;
-  player.userData.head.position.y = 2.0 + Math.abs(Math.sin(walkT))*.12;
-  hatSlot.position.y = 2.55 + Math.abs(Math.sin(walkT))*.12;
-
-  const camDist = 14, camH = 8;
-  const target = new THREE.Vector3(p.x + Math.sin(camYaw)*camDist, p.y + camH, p.z + Math.cos(camYaw)*camDist);
-  camPos.lerp(target, 1 - Math.exp(-5*dt));
-  camLook.lerp(new THREE.Vector3(p.x, p.y + 1.5, p.z), 1 - Math.exp(-8*dt));
-  camera.position.copy(camPos); camera.lookAt(camLook);
-  sun.position.set(p.x + 30, 50, p.z + 20); sun.target.position.copy(p); sun.target.updateMatrixWorld();
-
-  nearestNpc = null; let best = 4.5;
-  for (const n of npcs) { const d = n.obj.position.distanceTo(p); if (d < best) { best = d; nearestNpc = n; } }
-  const prompt = document.getElementById('prompt');
-  if (nearestNpc && !uiOpen) {
-    document.getElementById('promptName').textContent = SUBJECTS[nearestNpc.key].npc;
-    prompt.classList.remove('hidden-soft');
-  } else prompt.classList.add('hidden-soft');
 }
 
 /* =========================================================
- * 6. 教學課堂 ＋ 單元闖關測驗系統（先教學、後測驗）
+ * 8. 角色移動、跳躍與快速傳送控制
  * ========================================================= */
-const $ = id => document.getElementById(id);
-let quiz = null; // 儲存當前打開的科目、單元、模式（hub | lesson | question | answered | done）
+const keys = {};
+let vy = 0, onGround = true, walkTime = 0, nearestNpc = null, uiOpen = true;
+
+addEventListener('keydown', e => {
+  initAudio();
+  keys[e.code] = true;
+  if (e.code === 'Space' && onGround && !uiOpen) { vy = 9.5; onGround = false; play('jump'); }
+  if (e.code === 'KeyE' && !uiOpen && nearestNpc) tryInteract();
+  if (e.code === 'KeyN') { if ($('noteModal').classList.contains('hidden')) openNotebook(); else closeAll(); }
+  if (e.code === 'Escape' && uiOpen) closeAll();
+});
+addEventListener('keyup', e => keys[e.code] = false);
+
+const camOffset = new THREE.Vector3(0, 9.5, 14);
+const camLook = new THREE.Vector3();
+const camPos  = new THREE.Vector3(0, 10, 18);
+
+function teleportTo(subjKey) {
+  initAudio();
+  const target = npcs.find(n => n.key === subjKey);
+  if (!target || !target.obj.visible) return;
+  closeAll();
+  player.position.set(target.x * 0.82, 0.2, target.z * 0.82 + 2.0);
+  player.rotation.y = Math.atan2(target.x - player.position.x, target.z - player.position.z);
+  document.querySelectorAll('.tp-btn').forEach(btn => {
+    btn.classList.toggle('active-border', btn.dataset.tp === subjKey);
+  });
+  play('jump');
+}
+document.querySelectorAll('.tp-btn').forEach(btn => {
+  btn.onclick = () => teleportTo(btn.dataset.tp);
+});
+
+function updatePlayer(dt) {
+  let dx = 0, dz = 0;
+  if (keys.KeyW || keys.ArrowUp)    dz -= 1;
+  if (keys.KeyS || keys.ArrowDown)  dz += 1;
+  if (keys.KeyA || keys.ArrowLeft)  dx -= 1;
+  if (keys.KeyD || keys.ArrowRight) dx += 1;
+
+  const moving = dx !== 0 || dz !== 0;
+  if (moving) {
+    const len = Math.hypot(dx, dz); dx /= len; dz /= len;
+    const speed = 11.5;
+    let nx = player.position.x + dx * speed * dt;
+    let nz = player.position.z + dz * speed * dt;
+    const r = Math.hypot(nx, nz);
+    if (r > 43) { nx *= 43/r; nz *= 43/r; }
+    for (const c of colliders) {
+      if (c.disabled) continue;
+      const ox = nx - c.x, oz = nz - c.z, dist = Math.hypot(ox, oz), minD = c.r + 0.75;
+      if (dist < minD && dist > 0.001) { nx = c.x + (ox/dist)*minD; nz = c.z + (oz/dist)*minD; }
+    }
+    player.position.x = nx; player.position.z = nz;
+    const targetRot = Math.atan2(dx, dz);
+    let diff = targetRot - player.rotation.y;
+    while (diff >  Math.PI) diff -= Math.PI*2;
+    while (diff < -Math.PI) diff += Math.PI*2;
+    player.rotation.y += diff * Math.min(1, dt * 12);
+    walkTime += dt * 12;
+  } else walkTime = 0;
+
+  if (!onGround) {
+    vy -= 24 * dt;
+    player.position.y += vy * dt;
+    if (player.position.y <= 0.2) { player.position.y = 0.2; vy = 0; onGround = true; }
+  } else {
+    player.position.y = 0.2 + (moving ? Math.abs(Math.sin(walkTime))*0.18 : 0);
+  }
+  player.rotation.z = moving ? Math.sin(walkTime)*0.07 : 0;
+
+  const desired = player.position.clone().add(camOffset);
+  camPos.lerp(desired, Math.min(1, dt * 6));
+  camera.position.copy(camPos);
+  camLook.lerp(player.position.clone().add(new THREE.Vector3(0, 1.5, 0)), Math.min(1, dt * 10));
+  camera.lookAt(camLook);
+
+  nearestNpc = null;
+  let best = 4.6;
+  for (const n of npcs) {
+    if (!n.obj.visible || !SUBJECTS[n.key]) continue;
+    const dist = Math.hypot(player.position.x - n.x, player.position.z - n.z);
+    if (dist < best) { best = dist; nearestNpc = n; }
+  }
+  const pEl = $('prompt');
+  if (nearestNpc && !uiOpen) {
+    $('promptName').textContent = `${SUBJECTS[nearestNpc.key].npc}（${SUBJECTS[nearestNpc.key].publisher}）`;
+    pEl.classList.remove('hidden');
+  } else pEl.classList.add('hidden');
+}
+
+$('prompt').onclick = () => tryInteract();
+
+/* =========================================================
+ * 9. 年級切換（1～6年級）與大豐國小教科書版本表同步
+ * ========================================================= */
+function switchGrade(gradeStr) {
+  const g = String(gradeStr);
+  state.grade = g;
+  save();
+  SUBJECTS = getGradeSubjects(g);
+
+  // 1. 雙向更新頂部 1~6 年級切換按鈕的 active-border 樣式
+  document.querySelectorAll('#gradeSwitchBar .grade-tab').forEach(btn => {
+    btn.classList.toggle('active-border', btn.dataset.grade === g);
+  });
+
+  // 2. 1～2 年級為「生活科」且無「社會科」；3～6 年級為「自然科」且有「社會科」
+  const hasSocial = !!SUBJECTS.social;
+  const isLife = g === '1' || g === '2';
+  $('tpScienceLabel').textContent = isLife ? '生活探索站' : '自然研究站';
+  $('tpSocialBtn').classList.toggle('hidden', !hasSocial);
+  $('noteSocialTab').classList.toggle('hidden', !hasSocial);
+
+  // 3D 社會歷史館與浣熊船長 NPC 於 1~2 年級隱藏
+  socialMuseumGroup.visible = hasSocial;
+  const socialNpc = npcs.find(n => n.key === 'social');
+  if (socialNpc) socialNpc.obj.visible = hasSocial;
+
+  updateHUD();
+  renderPubTable();
+}
+
+document.querySelectorAll('#gradeSwitchBar .grade-tab').forEach(btn => {
+  btn.onclick = () => {
+    initAudio(); play('talk');
+    switchGrade(btn.dataset.grade);
+  };
+});
+
+function renderPubTable() {
+  const tbody = $('pubTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  ['1','2','3','4','5','6'].forEach(g => {
+    const cfg = CURRICULUM_ALL.gradeConfig[g];
+    const isCur = String(state.grade) === g;
+    const tr = document.createElement('tr');
+    tr.className = `pub-grade-row transition ${isCur ? 'active-border' : 'hover:bg-[#fffaf0]'}`;
+    tr.dataset.pgrade = g;
+    const s = cfg.subjects;
+    tr.innerHTML = `
+      <td class="p-2.5 font-black text-base">${cfg.shortName}</td>
+      <td class="p-2">${s.chinese?.publisher || '—'}</td>
+      <td class="p-2">${s.math?.publisher || '—'}</td>
+      <td class="p-2">${s.english?.publisher || '—'}</td>
+      <td class="p-2">${s.science?.publisher || '—'}${s.science?.isLife ? '<br/><span class="text-xs text-[#2b8a63]">(生活)</span>' : ''}</td>
+      <td class="p-2">${s.social?.publisher || '╱'}</td>
+      <td class="p-2 text-xs">藝文:${cfg.otherBooks['藝文']}<br/>健體/閩/客:${cfg.otherBooks['健體']}</td>
+      <td class="p-2 text-xs max-w-[150px]">${cfg.otherBooks['資訊']}</td>
+      <td class="p-2">
+        <button data-setg="${g}" class="btn px-3 py-1 rounded-xl ${isCur ? 'bg-[#ff8a65] text-white' : 'bg-[#7ed6b9] text-white'} font-black text-xs">
+          ${isCur ? '✓ 當前學習中' : '切換此年級'}
+        </button>
+      </td>
+    `;
+    tr.querySelector('[data-setg]').onclick = () => {
+      switchGrade(g);
+    };
+    tbody.appendChild(tr);
+  });
+}
+
+$('pubTableBtn').onclick = () => {
+  initAudio();
+  closeAll();
+  uiOpen = true;
+  renderPubTable();
+  $('pubModal').classList.remove('hidden');
+};
+$('closePubModal').onclick = closeAll;
+
+/* =========================================================
+ * 10. 家長 Gmail 註冊登入 & 兒童多組 Profile 管理（8 種角色）
+ * ========================================================= */
+let selectedNewAvatarId = 'fox';
+
+function renderAvatarPicker() {
+  const box = $('avatarPickerGrid');
+  if (!box) return;
+  box.innerHTML = '';
+  AVATARS.forEach(av => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.dataset.avid = av.id;
+    btn.className = `avatar-pick-card btn rounded-2xl border-4 border-[#eadfbf] bg-[#fffdf7] p-2.5 text-left flex items-center gap-2.5`;
+    btn.innerHTML = `
+      <span class="text-3xl">${av.icon}</span>
+      <div>
+        <div class="font-black text-xs text-[#5a4630]">${av.name}</div>
+        <div class="text-[11px] text-[#8c6d46]">${av.desc}</div>
+      </div>
+    `;
+    btn.onclick = () => selectAvatarOption(av.id);
+    box.appendChild(btn);
+  });
+  selectAvatarOption(selectedNewAvatarId);
+}
+
+function selectAvatarOption(avId) {
+  selectedNewAvatarId = avId;
+  // 雙向同步 8 種角色選擇卡的 active-border 樣式
+  document.querySelectorAll('#avatarPickerGrid .avatar-pick-card').forEach(el => {
+    el.classList.toggle('active-border', el.dataset.avid === avId);
+  });
+}
+
+function renderProfileCards() {
+  const acc = getCurrentAccount();
+  $('loggedParentEmail').textContent = acc.email;
+  const grid = $('profileCardsGrid');
+  grid.innerHTML = '';
+
+  acc.profiles.forEach(prof => {
+    const av = AVATARS.find(a => a.id === prof.avatarId) || AVATARS[0];
+    const gCfg = CURRICULUM_ALL.gradeConfig[prof.grade] || CURRICULUM_ALL.gradeConfig['5'];
+    const readCount = Object.keys(prof.lessonsRead || {}).length;
+    const passCount = Object.values(prof.unitStars || {}).filter(v => v >= 2).length;
+    const card = document.createElement('div');
+    card.dataset.pid = prof.id;
+    card.className = `profile-card btn cursor-pointer rounded-2xl border-4 border-[#eadfbf] bg-white p-4 flex flex-col justify-between gap-2`;
+    card.innerHTML = `
+      <div class="flex items-center gap-3">
+        <div class="text-4xl w-14 h-14 rounded-2xl bg-[#fff4d6] flex items-center justify-center border-2 border-[#e2cfa8]">${av.icon}</div>
+        <div>
+          <div class="font-black text-lg text-[#5a4630]">${prof.name}</div>
+          <div class="text-xs font-black text-[#c94a29]">${gCfg.name}｜${av.name.split(' ')[0]}</div>
+        </div>
+      </div>
+      <div class="text-xs font-bold text-[#7a5a3a] bg-[#fff9eb] rounded-xl p-2 flex justify-between">
+        <span>⭐ 星星：${prof.stars || 0}</span>
+        <span>📖 教學：${readCount}</span>
+        <span>🏆 通關：${passCount}</span>
+      </div>
+    `;
+    card.onclick = () => selectProfile(prof.id);
+    grid.appendChild(card);
+  });
+  syncProfileCardsVisual();
+}
+
+function syncProfileCardsVisual() {
+  const acc = getCurrentAccount();
+  document.querySelectorAll('#profileCardsGrid .profile-card').forEach(el => {
+    el.classList.toggle('active-border', el.dataset.pid === acc.activeProfileId);
+  });
+}
+
+function selectProfile(profileId) {
+  const acc = getCurrentAccount();
+  const target = acc.profiles.find(p => p.id === profileId);
+  if (!target) return;
+  acc.activeProfileId = target.id;
+  state = target;
+  saveDB();
+  syncProfileCardsVisual();
+  rebuildPlayerAvatar(state.avatarId);
+  switchGrade(state.grade);
+  applyHat();
+  updateHUD();
+}
+
+function loginWithGmail(emailStr, passStr = '1234') {
+  const cleanEmail = (emailStr || '').trim().toLowerCase();
+  if (!cleanEmail || !cleanEmail.includes('@')) {
+    $('authErrorMsg').textContent = '⚠️ 請輸入有效的 Gmail 信箱格式（例如 name@gmail.com）！';
+    $('authErrorMsg').classList.remove('hidden');
+    return false;
+  }
+  $('authErrorMsg').classList.add('hidden');
+  db.currentEmail = cleanEmail;
+  if (!db.accounts[cleanEmail]) {
+    const firstChild = createDefaultChildProfile('寶貝一號', '5', 'fox');
+    db.accounts[cleanEmail] = {
+      email: cleanEmail,
+      pass: passStr || '1234',
+      activeProfileId: firstChild.id,
+      profiles: [firstChild]
+    };
+  }
+  state = getActiveProfile();
+  saveDB();
+  rebuildPlayerAvatar(state.avatarId);
+  switchGrade(state.grade);
+  updateHUD();
+
+  $('authSection').classList.add('hidden');
+  $('profileSection').classList.remove('hidden');
+  $('profileSection').classList.add('flex');
+  renderAvatarPicker();
+  renderProfileCards();
+  return true;
+}
+
+$('googleQuickBtn').onclick = () => {
+  initAudio(); play('coin');
+  const mail = ($('gmailInput').value || 'wadeyu@gmail.com').trim();
+  loginWithGmail(mail, 'google-oauth');
+};
+
+$('gmailSubmitBtn').onclick = () => {
+  initAudio(); play('coin');
+  loginWithGmail($('gmailInput').value, $('passInput').value);
+};
+
+$('logoutBtn').onclick = () => {
+  $('profileSection').classList.add('hidden');
+  $('profileSection').classList.remove('flex');
+  $('authSection').classList.remove('hidden');
+};
+
+$('createProfileBtn').onclick = () => {
+  initAudio();
+  const name = ($('newChildName').value || '').trim() || `小冒險家 ${getCurrentAccount().profiles.length + 1}`;
+  const grade = $('newChildGrade').value || '5';
+  const newProf = createDefaultChildProfile(name, grade, selectedNewAvatarId);
+  const acc = getCurrentAccount();
+  acc.profiles.push(newProf);
+  $('newChildName').value = '';
+  selectProfile(newProf.id);
+  renderProfileCards();
+  play('badge'); confetti(60);
+};
+
+$('enterIslandBtn').onclick = () => {
+  initAudio();
+  $('authProfileModal').classList.add('hidden');
+  uiOpen = false;
+};
+
+$('profileChipBtn').onclick = () => {
+  initAudio();
+  closeAll();
+  uiOpen = true;
+  $('authSection').classList.add('hidden');
+  $('profileSection').classList.remove('hidden');
+  $('profileSection').classList.add('flex');
+  renderAvatarPicker();
+  renderProfileCards();
+  $('authProfileModal').classList.remove('hidden');
+};
+
+/* =========================================================
+ * 11. 學科單元選擇大廳、互動教學課堂、考古題闖關
+ * ========================================================= */
+let quiz = null;
 
 function tryInteract() {
   if (!nearestNpc || uiOpen) return;
@@ -607,26 +1266,34 @@ function tryInteract() {
 }
 
 function openSubjectHub(key, selectedUnitId = null) {
-  uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false);
   const S = SUBJECTS[key];
+  if (!S) return;
+  uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false);
   const selId = selectedUnitId || (S.units[0] && S.units[0].id);
   quiz = { key, mode:'hub', selectedUnitId: selId };
 
   $('npcFace').textContent = S.face;
   $('npcName').textContent = S.npc;
+  $('pubVersionBadge').textContent = `📘 大豐國小指定版本：${S.pubLabel}`;
   $('npcPlace').textContent = S.place;
   const passedUnits = S.units.filter(u => (state.unitStars[u.id] || 0) >= 2).length;
   $('qProgress').textContent = `已通過 ${passedUnits} / ${S.units.length} 單元`;
 
-  $('dialog').innerHTML = `<div class="font-bold">${S.intro}</div>
-    <div class="text-sm text-[#8c6d46] mt-1">💡 建議學習順序：先點選單元的 <b>「📖 課堂教學」</b> 學習重點與口訣（可得 ⭐×2），再點 <b>「✍️ 單元測驗」</b> 挑戰拿滿 3 顆星！</div>`;
+  const pastLinksHtml = (S.pastExamLinks && S.pastExamLinks.length) ? `
+    <div class="mt-2 pt-2 border-t border-[#e5d2ab] flex flex-wrap items-center gap-1.5 text-xs">
+      <span class="font-black text-[#8c5828]">📂 米蘭老師歷屆段考卷雲端下載：</span>
+      ${S.pastExamLinks.map(lk => `<a href="${lk.url}" target="_blank" rel="noopener" class="px-2.5 py-0.5 rounded-full bg-white border border-[#d6be92] text-[#b44b2b] font-black hover:bg-[#ffe8df]">${lk.label} ↗</a>`).join('')}
+    </div>
+  ` : '';
 
-  const wrongInSubj = state.wrongBook.filter(w => w.subj === key);
+  $('dialog').innerHTML = `<div class="font-bold text-base md:text-lg">${S.intro}</div>${pastLinksHtml}`;
+
+  const wrongInSubj = state.wrongBook.filter(w => w.subj === key && String(w.grade || state.grade) === String(state.grade));
   const sub = $('subContent');
   sub.innerHTML = `
     <div class="flex flex-wrap gap-2 mb-3">
-      <button id="grandMixBtn" class="btn px-4 py-2 rounded-2xl bg-[#ff8a65] text-white font-black text-base">🏆 全科隨機大滿貫（抽10題）</button>
-      <button id="wrongDrillBtn" class="btn px-4 py-2 rounded-2xl ${wrongInSubj.length ? 'bg-[#e57373] text-white' : 'bg-[#eadfbf] text-[#8c6d46]'} font-black text-base">
+      <button id="grandMixBtn" class="btn px-4 py-2 rounded-2xl bg-[#ff8a65] text-white font-black text-sm md:text-base">🏆 本科隨機大滿貫（抽10題）</button>
+      <button id="wrongDrillBtn" class="btn px-4 py-2 rounded-2xl ${wrongInSubj.length ? 'bg-[#e57373] text-white' : 'bg-[#eadfbf] text-[#8c6d46]'} font-black text-sm md:text-base">
         🩺 本科錯題特訓營（${wrongInSubj.length} 題待消滅）
       </button>
     </div>
@@ -644,10 +1311,10 @@ function openSubjectHub(key, selectedUnitId = null) {
     card.innerHTML = `
       <div>
         <div class="flex items-center justify-between gap-2">
-          <span class="font-black text-lg text-[#5a4630]">${u.title}</span>
+          <span class="font-black text-base md:text-lg text-[#5a4630]">${u.title}</span>
           <span class="text-sm font-bold whitespace-nowrap">${starStr}</span>
         </div>
-        <div class="text-sm text-[#8c6d46] mt-1">${u.summary}</div>
+        <div class="text-xs md:text-sm text-[#8c6d46] mt-1">${u.summary}</div>
         <div class="text-xs font-bold mt-1.5 flex gap-2">
           <span class="px-2 py-0.5 rounded-full ${read ? 'bg-[#d4f5e6] text-[#2b8a63]' : 'bg-[#fff6dc] text-[#a08560]'}">
             ${read ? '✓ 已完成教學' : `📖 ${u.lessons.length} 張教學卡`}
@@ -684,13 +1351,11 @@ function openSubjectHub(key, selectedUnitId = null) {
 
 function selectUnitCard(uid) {
   if (quiz) quiz.selectedUnitId = uid;
-  // 統一雙向更新所有單元卡的 active-border 樣式
   document.querySelectorAll('#unitList .unit-card').forEach(el => {
     el.classList.toggle('active-border', el.dataset.uid === uid);
   });
 }
 
-/* ---------- 互動教學課堂（Lesson Mode） ---------- */
 function startLesson(key, unitId, stepIdx = 0) {
   const S = SUBJECTS[key];
   const U = S.units.find(u => u.id === unitId) || S.units[0];
@@ -699,16 +1364,15 @@ function startLesson(key, unitId, stepIdx = 0) {
 }
 
 function renderLessonStep() {
-  const { key, unit: U, step } = quiz;
+  const { unit: U, step } = quiz;
   const L = U.lessons[step];
   $('qProgress').textContent = `📖 教學講義 ${step + 1} / ${U.lessons.length}`;
-  $('dialog').innerHTML = `<div class="text-base font-black text-[#a08560]">${U.title}</div>
+  $('dialog').innerHTML = `<div class="text-sm font-black text-[#a08560]">${U.title}</div>
     <div class="text-xl md:text-2xl font-black text-[#5a4630] mt-0.5">${L.title}</div>`;
 
-  // 步驟切換按鈕列 + 講義內容 + 舉例口訣框
   const tabsHtml = U.lessons.map((item, idx) => `
     <button data-lstep="${idx}" class="lesson-step-tab btn px-3.5 py-1.5 rounded-xl border-3 border-[#eadfbf] bg-white font-black text-sm text-[#7a5a3a]">
-      觀念 ${idx + 1}：${item.title.replace(/^[^\s]+\s/, '').slice(0, 8)}
+      觀念 ${idx + 1}：${item.title.slice(0, 10)}
     </button>
   `).join('');
 
@@ -719,12 +1383,11 @@ function renderLessonStep() {
     </div>
     ${L.example ? `
       <div class="bg-[#fff3c4] border-4 border-[#f2d06b] rounded-2xl p-4 mt-3 text-base md:text-lg font-bold text-[#6e4f1d] leading-8">
-        💡 <b>老師舉例 & 必背口訣：</b><br/>${L.example}
+        💡 <b>老師舉例 & 段考必背口訣：</b><br/>${L.example}
       </div>
     ` : ''}
   `;
 
-  // 雙向同步教學步驟按鈕的 active-border
   document.querySelectorAll('#lessonStepTabs .lesson-step-tab').forEach(btn => {
     const idx = Number(btn.dataset.lstep);
     btn.classList.toggle('active-border', idx === step);
@@ -739,7 +1402,6 @@ function renderLessonStep() {
   $('nextBtn').classList.remove('hidden');
 }
 
-/* ---------- 單元闖關測驗（Quiz Mode） ---------- */
 function startUnitQuiz(key, unitId) {
   const S = SUBJECTS[key];
   const U = S.units.find(u => u.id === unitId) || S.units[0];
@@ -780,7 +1442,7 @@ function startGrandMixQuiz(key) {
 }
 
 function startWrongDrill(key) {
-  const list = state.wrongBook.filter(w => w.subj === key);
+  const list = state.wrongBook.filter(w => w.subj === key && String(w.grade || state.grade) === String(state.grade));
   if (!list.length) return;
   quiz = {
     key,
@@ -800,7 +1462,7 @@ function startWrongDrill(key) {
 function showQuestion() {
   const Q = quiz.qs[quiz.idx];
   quiz.mode = 'question'; quiz.selected = null; quiz.tries = 0;
-  $('qProgress').textContent = `${quiz.title}｜第 ${quiz.idx + 1} / ${quiz.qs.length} 題`;
+  $('qProgress').textContent = `第 ${quiz.idx + 1} / ${quiz.qs.length} 題`;
   $('dialog').innerHTML = `
     <div class="text-xs font-black text-[#a08560] mb-1">📍 單元：${Q.unitTitle || quiz.title}</div>
     <div class="font-bold text-xl leading-9">${Q.q}</div>
@@ -823,7 +1485,6 @@ function showQuestion() {
 }
 
 function setOptionVisual(selectedIdx, cls) {
-  // 強制統一更新所有選項容器：選中者加上 active-border 與狀態樣式，其餘移除
   document.querySelectorAll('#options .opt').forEach(el => {
     const isSel = Number(el.dataset.idx) === selectedIdx;
     el.classList.toggle('active-border', isSel);
@@ -835,6 +1496,7 @@ function setOptionVisual(selectedIdx, cls) {
 function recordWrongQuestion(Q) {
   if (!state.wrongBook.some(w => w.q === Q.q)) {
     state.wrongBook.push({
+      grade: String(state.grade),
       subj: quiz.key,
       unitId: Q.unitId || '',
       unitTitle: Q.unitTitle || quiz.title,
@@ -899,11 +1561,12 @@ function finishQuiz() {
     if (earnedStars > prev) state.unitStars[quiz.unit.id] = earnedStars;
   }
 
-  // 若該科已有至少 3 個單元達到 2 星以上（或通過大滿貫），授予該科領域徽章
   const passedCount = S.units.filter(u => (state.unitStars[u.id] || 0) >= 2).length;
+  const needUnits = Math.min(2, S.units.length);
+  const badgeKey = `${state.grade}_${quiz.key}`;
   let newBadge = false;
-  if ((passedCount >= 3 || (!quiz.unit && ratio >= 0.6)) && !state.badges[quiz.key]) {
-    state.badges[quiz.key] = true;
+  if ((passedCount >= needUnits || (!quiz.unit && ratio >= 0.6)) && !state.badges[badgeKey]) {
+    state.badges[badgeKey] = true;
     newBadge = true;
     addStars(5);
   }
@@ -916,7 +1579,7 @@ function finishQuiz() {
     msg += `<div class="text-[#c94a29] font-black text-xl">🏅 恭喜獲得「${S.place.split('・')[0]}領域徽章」＋ 額外 ⭐×5！</div>`;
   } else if (earnedStars >= 2) {
     confetti(90);
-    msg += `<div>表現太棒了！目前本科已通過 <b>${passedCount} / ${S.units.length}</b> 個單元（滿 3 單元即可獲頒領域徽章）！</div>`;
+    msg += `<div>表現太棒了！目前本科已通過 <b>${passedCount} / ${S.units.length}</b> 個單元！</div>`;
   } else {
     msg += `<div>別氣餒！可以先點 <b>「📖 課堂教學」</b> 複習老師整理的重點講義，再挑戰一次喔！</div>`;
   }
@@ -953,22 +1616,23 @@ $('nextBtn').onclick = () => {
 $('closeQuiz').onclick = closeAll;
 
 /* =========================================================
- * 7. 隨身知識筆記本 & 錯題本（Notebook Modal）
+ * 12. 隨身知識筆記本 & 錯題本
  * ========================================================= */
 let currentNoteTab = 'chinese';
 function openNotebook(tab = 'chinese') {
   initAudio();
+  closeAll();
   uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false);
-  $('quizModal').classList.add('hidden');
-  $('bagModal').classList.add('hidden');
+  const gCfg = CURRICULUM_ALL.gradeConfig[state.grade] || CURRICULUM_ALL.gradeConfig['5'];
+  $('noteGradeLabel').textContent = gCfg.name;
   $('noteModal').classList.remove('hidden');
+  if (tab === 'social' && !SUBJECTS.social) tab = 'chinese';
   renderNotebookTab(tab);
 }
 
 function renderNotebookTab(tab) {
   currentNoteTab = tab;
   $('wrongCountTab').textContent = state.wrongBook.length;
-  // 統一雙向更新筆記本頁籤的 active-border 樣式
   document.querySelectorAll('#noteTabs .note-tab').forEach(btn => {
     btn.classList.toggle('active-border', btn.dataset.ntab === tab);
   });
@@ -977,7 +1641,7 @@ function renderNotebookTab(tab) {
   body.innerHTML = '';
   if (tab === 'wrong') {
     if (!state.wrongBook.length) {
-      body.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-xl font-bold text-[#7a5a3a]">🎉 太棒了！目前錯題本是空的，沒有待複習的錯題！</div>`;
+      body.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-xl font-bold text-[#7a5a3a]">🎉 太棒了！目前 ${state.name} 的錯題本是空的，沒有待複習的錯題！</div>`;
       return;
     }
     state.wrongBook.forEach((w, idx) => {
@@ -1001,6 +1665,7 @@ function renderNotebookTab(tab) {
   }
 
   const S = SUBJECTS[tab];
+  if (!S) return;
   S.units.forEach(u => {
     const sec = document.createElement('div');
     sec.className = 'bg-white rounded-2xl border-4 border-[#eadfbf] p-4 space-y-3';
@@ -1015,7 +1680,7 @@ function renderNotebookTab(tab) {
       <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[#f0e4c8] pb-2">
         <div>
           <span class="text-xl font-black text-[#5a4630]">${u.title}</span>
-          <span class="text-sm text-[#a08560] ml-2">${u.summary}</span>
+          <span class="text-xs font-black px-2 py-0.5 rounded-full bg-[#e6fbf2] text-[#1f7a58] ml-2">${S.pubLabel}</span>
         </div>
         <button data-goquiz="${u.id}" class="btn px-3.5 py-1 rounded-xl bg-[#ff8a65] text-white font-black text-sm">✍️ 測驗此單元 (${u.questions.length}題)</button>
       </div>
@@ -1024,8 +1689,9 @@ function renderNotebookTab(tab) {
     sec.querySelector('[data-goquiz]').onclick = () => {
       $('noteModal').classList.add('hidden');
       $('quizModal').classList.remove('hidden');
-      const S = SUBJECTS[tab];
-      $('npcFace').textContent = S.face; $('npcName').textContent = S.npc; $('npcPlace').textContent = S.place;
+      $('npcFace').textContent = S.face; $('npcName').textContent = S.npc;
+      $('pubVersionBadge').textContent = `📘 大豐國小指定版本：${S.pubLabel}`;
+      $('npcPlace').textContent = S.place;
       startUnitQuiz(tab, u.id);
     };
     body.appendChild(sec);
@@ -1042,24 +1708,51 @@ function closeAll() {
   $('quizModal').classList.add('hidden');
   $('bagModal').classList.add('hidden');
   $('noteModal').classList.add('hidden');
+  $('pubModal').classList.add('hidden');
+  $('authProfileModal').classList.add('hidden');
   uiOpen = false; quiz = null;
 }
 
 /* =========================================================
- * 8. 星星、徽章 HUD、背包商店
+ * 13. HUD、星星與背包商店更新
  * ========================================================= */
-function addStars(n) { state.stars += n; save(); updateHUD(); }
-function updateHUD() {
-  $('stars').textContent = state.stars; $('stars2').textContent = state.stars;
-  const count = Object.keys(state.badges).length;
-  $('badgeCount').textContent = count;
-  $('badgeBar').style.width = (count/4*100) + '%';
-  document.querySelectorAll('.badge').forEach(b => b.classList.toggle('locked', !state.badges[b.dataset.badge]));
-  npcs.forEach(n => n.marker.visible = !state.badges[n.key]);
+function addStars(n) { state.stars = (state.stars || 0) + n; save(); updateHUD(); }
 
-  const totalUnits = Object.values(SUBJECTS).reduce((s, x) => s + x.units.length, 0);
-  const readCount = Object.keys(state.lessonsRead).length;
-  const passedUnits = Object.values(state.unitStars).filter(v => v >= 2).length;
+function updateHUD() {
+  const av = AVATARS.find(a => a.id === state.avatarId) || AVATARS[0];
+  const gCfg = CURRICULUM_ALL.gradeConfig[state.grade] || CURRICULUM_ALL.gradeConfig['5'];
+  $('hudAvatarIcon').textContent = av.icon;
+  $('hudProfileName').textContent = state.name;
+  $('hudGradeBadge').textContent = gCfg.shortName;
+  $('activeParentMail').textContent = `📧 ${getCurrentAccount().email}`;
+
+  $('stars').textContent = state.stars || 0;
+  $('stars2').textContent = state.stars || 0;
+
+  const activeSubjKeys = Object.keys(SUBJECTS);
+  const unlockedCount = activeSubjKeys.filter(k => state.badges[`${state.grade}_${k}`]).length;
+  $('badgeCount').textContent = unlockedCount;
+  $('badgeTotal').textContent = activeSubjKeys.length;
+  $('badgeBar').style.width = (unlockedCount / activeSubjKeys.length * 100) + '%';
+
+  document.querySelectorAll('#badgeIconsRow .badge').forEach(b => {
+    const k = b.dataset.badge;
+    b.classList.toggle('hidden', !SUBJECTS[k]);
+    b.classList.toggle('unlocked', !!state.badges[`${state.grade}_${k}`]);
+  });
+
+  npcs.forEach(n => {
+    if (n.marker) n.marker.visible = !state.badges[`${state.grade}_${n.key}`];
+  });
+
+  let totalUnits = 0, readCount = 0, passedUnits = 0;
+  Object.values(SUBJECTS).forEach(S => {
+    S.units.forEach(u => {
+      totalUnits++;
+      if (state.lessonsRead[u.id]) readCount++;
+      if ((state.unitStars[u.id] || 0) >= 2) passedUnits++;
+    });
+  });
   $('lessonStat').textContent = `${readCount}/${totalUnits}`;
   $('unitStat').textContent = `${passedUnits}/${totalUnits}`;
   $('wrongCountTab').textContent = state.wrongBook.length;
@@ -1084,24 +1777,24 @@ function syncShopVisual() {
 }
 function buyOrEquip(item) {
   if (!state.owned[item.id]) {
-    if (state.stars < item.cost) { play('wrong'); $('stars2').parentElement.classList.add('opt','wrong'); setTimeout(()=>$('stars2').parentElement.classList.remove('opt','wrong'), 400); return; }
+    if (state.stars < item.cost) { play('wrong'); return; }
     state.stars -= item.cost; state.owned[item.id] = true; play('coin'); confetti(40);
     if (item.type === 'deco') buildBonusFlowers();
   }
   if (item.type === 'hat') { state.equipped = state.equipped === item.id ? null : item.id; applyHat(); }
   save(); updateHUD(); renderShop();
 }
-function openBag() { if (uiOpen) closeAll(); uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false); renderShop(); $('bagModal').classList.remove('hidden'); }
+function openBag() { closeAll(); uiOpen = true; Object.keys(keys).forEach(k => keys[k] = false); renderShop(); $('bagModal').classList.remove('hidden'); }
 $('bagBtn').onclick = () => { initAudio(); openBag(); };
 $('closeBag').onclick = closeAll;
 $('muteBtn').onclick = () => {
   initAudio(); musicOn = !musicOn;
-  musicGain.gain.value = musicOn ? 0.05 : 0;
+  if (musicGain) musicGain.gain.value = musicOn ? 0.05 : 0;
   $('muteBtn').textContent = musicOn ? '🎵 音樂：開' : '🔇 音樂：關';
 };
 
 /* =========================================================
- * 9. Confetti 粒子特效
+ * 14. Confetti 粒子特效與主迴圈
  * ========================================================= */
 const cv = $('confetti'), cx = cv.getContext('2d');
 let parts = [];
@@ -1123,9 +1816,6 @@ function drawConfetti(dt) {
   }
 }
 
-/* =========================================================
- * 10. 主迴圈
- * ========================================================= */
 const clock = new THREE.Clock();
 function loop() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
@@ -1152,14 +1842,18 @@ if ('ontouchstart' in window) {
   renderer.domElement.addEventListener('touchend',   () => keys.KeyW = false);
 }
 
-$('startBtn').onclick = () => { initAudio(); $('welcome').remove(); };
-applyHat(); updateHUD();
-if (state.owned.seeds) buildBonusFlowers();
+// 初始化角色模型、年級狀態與主迴圈
+rebuildPlayerAvatar(state.avatarId);
+switchGrade(state.grade);
+if (state.owned && state.owned.seeds) buildBonusFlowers();
 loop();
 
-// 供自動化測試使用
+// 供自動化測試與檢測使用
 window.__island = {
-  state, SUBJECTS, SHOP, player, npcs,
+  get state() { return state; },
+  get SUBJECTS() { return SUBJECTS; },
+  AVATARS, SHOP, CURRICULUM_ALL, player, npcs,
+  loginWithGmail, selectProfile, selectAvatarOption, switchGrade,
   openSubjectHub, selectUnitCard, startLesson, startUnitQuiz, startGrandMixQuiz,
   answer, openNotebook, renderNotebookTab, buyOrEquip, teleportTo
 };
