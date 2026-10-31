@@ -609,6 +609,21 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
+// WebGL Context Lost & Restored 守護機制（防止背景分頁或顯存回收導致地圖空掉）
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  console.warn('[LearningIsland] WebGL Context Lost! Waiting for restore...');
+}, false);
+
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+  console.info('[LearningIsland] WebGL Context Restored! Rebuilding viewport & matrix...');
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  if (typeof resizeCv === 'function') resizeCv();
+}, false);
+
 scene.add(new THREE.HemisphereLight(0xfffbe6, 0x6ab04c, 0.88));
 const sun = new THREE.DirectionalLight(0xfff3d1, 1.15);
 sun.position.set(35, 55, 30);
@@ -1462,10 +1477,29 @@ function updatePlayer(dt) {
   }
   player.rotation.z = moving ? Math.sin(walkTime)*0.07 : 0;
 
+  // 防禦性座標防護：防止玩家座標或相機因除零或浮點運算產生 NaN / Infinity 導致地圖消失
+  if (isNaN(player.position.x) || isNaN(player.position.y) || isNaN(player.position.z)) {
+    console.warn('[LearningIsland] Detected NaN in player coordinates, restoring safe origin...');
+    player.position.set(0, 0.2, 4);
+    vy = 0; onGround = true;
+  }
+  if (player.position.y < 0.2) {
+    player.position.y = 0.2; vy = 0; onGround = true;
+  }
+
   const desired = player.position.clone().add(camOffset);
   camPos.lerp(desired, Math.min(1, dt * 6));
+  
+  if (isNaN(camPos.x) || isNaN(camPos.y) || isNaN(camPos.z)) {
+    camPos.set(0, 10, 18);
+  }
   camera.position.copy(camPos);
-  camLook.lerp(player.position.clone().add(new THREE.Vector3(0, 1.5, 0)), Math.min(1, dt * 10));
+
+  const targetLook = player.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+  camLook.lerp(targetLook, Math.min(1, dt * 10));
+  if (isNaN(camLook.x) || isNaN(camLook.y) || isNaN(camLook.z)) {
+    camLook.set(0, 1.5, 4);
+  }
   camera.lookAt(camLook);
 
   nearestNpc = null;
@@ -2460,6 +2494,13 @@ function loop() {
 addEventListener('resize', () => {
   camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight); resizeCv();
+});
+
+// 當瀏覽器標籤頁切換回前景時，重置時鐘防止 dt 巨幅累加穿透地面
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && clock) {
+    clock.getDelta(); // 消耗累積的異常時間差
+  }
 });
 
 // 初始化角色選擇器、3D角色模型、年級狀態、島嶼景觀與主迴圈
